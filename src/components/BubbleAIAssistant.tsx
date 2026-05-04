@@ -98,11 +98,11 @@ export default function BubbleAIAssistant() {
   }
 
   return (
-    <div className="absolute left-1/2 bottom-5 z-50 w-[min(760px,calc(100%-48px))] -translate-x-1/2">
-      <div className="glass-panel p-3 shadow-2xl">
+    <div className="absolute left-1/2 bottom-5 z-50 w-[min(640px,calc(100%-48px))] -translate-x-1/2">
+      <div className="glass-panel !rounded-[30px] p-4 shadow-2xl">
         <div className="flex items-center gap-3">
           <div className="min-w-0 flex-1">
-            <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="mb-3 flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
                 <Sparkles size={15} className="text-primary" />
                 <span className="truncate text-[13px] font-semibold text-on-surface">
@@ -127,7 +127,7 @@ export default function BubbleAIAssistant() {
                     <button
                       key={id}
                       onClick={() => setMode(id)}
-                      className={`flex h-8 items-center gap-1.5 rounded-full px-3 text-[12px] font-semibold transition-all ${
+                      className={`flex h-10 items-center gap-1.5 rounded-full px-3.5 text-[12px] font-semibold transition-all ${
                         normalizedMode === id
                           ? 'bg-primary text-on-primary shadow-glow-primary'
                           : 'text-on-surface-variant hover:bg-white/70 hover:text-on-surface'
@@ -149,12 +149,13 @@ export default function BubbleAIAssistant() {
                     if (event.key === 'Enter') handleSubmit()
                   }}
                   placeholder={activeMode.placeholder}
-                  className="input-field h-10 w-full pr-11 text-[13px]"
+                  className="input-field h-12 w-full pr-[72px] text-[13px]"
                 />
+                <div className="pointer-events-none absolute right-10 top-1/2 h-9 w-16 -translate-y-1/2 bg-gradient-to-r from-white/0 via-white/70 to-white/95" />
                 <button
                   onClick={handleSubmit}
                   disabled={!canSubmit || isLoading}
-                  className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-on-primary transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-on-primary transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40"
                   title={normalizedMode === 'add' ? '发送' : activeMode.label}
                 >
                   {isLoading && (normalizedMode === 'followup' || normalizedMode === 'add') ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}

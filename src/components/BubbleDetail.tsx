@@ -21,7 +21,7 @@ export default function BubbleDetail() {
   if (!bubble) return null
 
   return (
-    <div className="absolute top-20 bottom-44 left-6 z-40 w-[340px] max-w-[calc(100%-3rem)] glass-panel floating-window p-5 space-y-4 overflow-y-auto animate-bubble-in">
+    <div className="absolute top-20 bottom-48 left-6 z-40 w-[280px] max-w-[calc(100%-3rem)] glass-panel floating-window p-4 space-y-4 overflow-y-auto animate-bubble-in">
       <div className="flex items-center justify-between">
         <span className="text-[15px] text-on-surface font-semibold">气泡详情</span>
         <button onClick={() => selectBubble(null)} className="h-8 w-8 rounded-full flex items-center justify-center text-outline hover:bg-surface-container/70 hover:text-on-surface transition-colors">

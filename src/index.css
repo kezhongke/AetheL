@@ -38,7 +38,7 @@
 }
 
 ::selection {
-  background-color: #ffdad2;
+  background-color: #ffe0dc;
   color: #3d0600;
 }
 
@@ -53,7 +53,7 @@
     box-shadow:
       inset 0 1px 1px rgba(255, 255, 255, 0.40),
       inset 0 -1px 1px rgba(255, 255, 255, 0.10),
-      0 8px 32px rgba(217, 75, 43, 0.06);
+      0 8px 32px rgba(217, 35, 15, 0.06);
   }
 
   .glass-panel {
@@ -66,7 +66,7 @@
     box-shadow:
       inset 0 1px 1px rgba(255, 255, 255, 0.40),
       inset 0 -1px 1px rgba(255, 255, 255, 0.10),
-      0 8px 32px rgba(217, 75, 43, 0.06);
+      0 8px 32px rgba(217, 35, 15, 0.06);
     border-radius: 24px;
   }
 
@@ -80,22 +80,8 @@
     box-shadow:
       inset 0 1px 1px rgba(255, 255, 255, 0.42),
       inset 0 -1px 1px rgba(255, 255, 255, 0.10),
-      0 18px 44px rgba(217, 75, 43, 0.08),
+      0 18px 44px rgba(217, 35, 15, 0.08),
       0 2px 10px rgba(60, 45, 41, 0.04);
-  }
-
-  .glass-panel-mint {
-    background-color: rgba(192, 236, 220, 0.28);
-    backdrop-filter: saturate(180%) blur(32px);
-    -webkit-backdrop-filter: saturate(180%) blur(32px);
-    border-top: 1px solid rgba(255, 255, 255, 0.8);
-    border-left: 1px solid rgba(255, 255, 255, 0.8);
-    border-bottom: 1px solid rgba(226, 191, 183, 0.24);
-    border-right: 1px solid rgba(226, 191, 183, 0.24);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.55),
-      0 18px 54px rgba(62, 102, 89, 0.12);
-    border-radius: 24px;
   }
 
   .glass-panel-tertiary {
@@ -111,8 +97,8 @@
   }
 
   .btn-liquid {
-    background: linear-gradient(135deg, #d94b2b 0%, #ad2c0d 100%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.30), 0 8px 24px rgba(173, 44, 13, 0.18);
+    background: linear-gradient(135deg, #ff4428 0%, #d9230f 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.30), 0 8px 24px rgba(217, 35, 15, 0.22);
     backdrop-filter: blur(10px);
     color: #ffffff;
     font-family: 'Inter', sans-serif;
@@ -129,7 +115,7 @@
 
   .btn-liquid:hover {
     transform: scale(1.02);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.48), 0 12px 30px rgba(173, 44, 13, 0.22);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.48), 0 12px 30px rgba(217, 35, 15, 0.26);
   }
 
   .btn-liquid:active {
@@ -143,7 +129,7 @@
     border: 1px solid rgba(255, 255, 255, 0.38);
     border-bottom-color: rgba(255, 255, 255, 0.10);
     border-right-color: rgba(255, 255, 255, 0.10);
-    box-shadow: 0 8px 24px rgba(217, 75, 43, 0.06);
+    box-shadow: 0 8px 24px rgba(217, 35, 15, 0.06);
     color: #5a413b;
     font-family: 'Inter', sans-serif;
     font-size: 13px;
@@ -158,9 +144,9 @@
 
   .btn-glass:hover {
     transform: scale(1.02);
-    color: #ad2c0d;
+    color: #d9230f;
     background-color: rgba(255, 255, 255, 0.42);
-    box-shadow: 0 10px 28px rgba(217, 75, 43, 0.10);
+    box-shadow: 0 10px 28px rgba(217, 35, 15, 0.10);
   }
 
   .btn-glass:active {
@@ -183,7 +169,7 @@
   }
 
   .btn-ghost:hover {
-    color: #ad2c0d;
+    color: #d9230f;
     background-color: rgba(255, 218, 210, 0.32);
   }
 
@@ -205,8 +191,8 @@
   }
 
   .input-field:focus {
-    border-color: rgba(173, 44, 13, 0.34);
-    box-shadow: 0 0 0 3px rgba(255, 180, 163, 0.24), inset 0 1px 8px rgba(176, 46, 16, 0.03);
+    border-color: rgba(217, 35, 15, 0.34);
+    box-shadow: 0 0 0 3px rgba(255, 181, 170, 0.24), inset 0 1px 8px rgba(217, 35, 15, 0.03);
     background-color: rgba(255, 255, 255, 0.58);
   }
 
@@ -229,14 +215,14 @@
 
 @layer utilities {
   .text-gradient-primary {
-    background: linear-gradient(135deg, #ad2c0d, #3e6659);
+    background: linear-gradient(135deg, #d9230f, #ef3b22);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .text-gradient-tertiary {
-    background: linear-gradient(135deg, #5c5977, #ad2c0d);
+    background: linear-gradient(135deg, #5c5977, #d9230f);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -254,13 +240,13 @@
   .liquid-bg {
     background:
       radial-gradient(circle at 20% 30%, rgba(255, 218, 214, 0.40) 0%, transparent 50%),
-      radial-gradient(circle at 80% 70%, rgba(192, 236, 220, 0.28) 0%, transparent 50%);
+      radial-gradient(circle at 80% 70%, rgba(226, 229, 255, 0.30) 0%, transparent 50%);
   }
 
   .dot-grid-bg {
     background-image:
       radial-gradient(circle at 20% 30%, rgba(255, 218, 214, 0.40) 0%, transparent 50%),
-      radial-gradient(circle at 80% 70%, rgba(192, 236, 220, 0.28) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(226, 229, 255, 0.30) 0%, transparent 50%),
       radial-gradient(rgba(142, 112, 106, 0.13) 1px, transparent 1px);
     background-size: 100% 100%, 100% 100%, 14px 14px;
   }

@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from 'react'
+import { HelpCircle, Maximize2, MousePointer2, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react'
 import { useBubbleStore } from '@/stores/bubbleStore'
 import type { Bubble } from '@/stores/bubbleStore'
 
@@ -38,6 +39,7 @@ export default function BubbleCanvas() {
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
   const [editingBubble, setEditingBubble] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
+  const [showZoomMenu, setShowZoomMenu] = useState(false)
   const [canvasSize, setCanvasSize] = useState({ w: typeof window !== 'undefined' ? window.innerWidth : 1000, h: typeof window !== 'undefined' ? window.innerHeight : 800 })
   const [selectionBox, setSelectionBox] = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -121,7 +123,7 @@ export default function BubbleCanvas() {
 
       ctx.beginPath()
       ctx.setLineDash([6, 4])
-      ctx.strokeStyle = rel.type === 'contradictory' ? 'rgba(186, 26, 26, 0.42)' : rel.type === 'duplicate' ? 'rgba(92, 89, 119, 0.4)' : 'rgba(62, 102, 89, 0.36)'
+      ctx.strokeStyle = rel.type === 'contradictory' ? 'rgba(186, 26, 26, 0.42)' : rel.type === 'duplicate' ? 'rgba(92, 89, 119, 0.4)' : 'rgba(79, 91, 213, 0.32)'
       ctx.lineWidth = 2
       ctx.moveTo(sp.x, sp.y)
       ctx.lineTo(tp.x, tp.y)
@@ -316,7 +318,7 @@ export default function BubbleCanvas() {
       ctx.rect(sx, sy, sw, sh)
       ctx.fillStyle = 'rgba(255, 180, 163, 0.12)'
       ctx.fill()
-      ctx.strokeStyle = 'rgba(176, 46, 16, 0.42)'
+      ctx.strokeStyle = 'rgba(217, 35, 15, 0.42)'
       ctx.lineWidth = 1
       ctx.setLineDash([4, 4])
       ctx.stroke()
@@ -470,6 +472,43 @@ export default function BubbleCanvas() {
     setViewport({ zoom: newZoom })
   }, [viewport.zoom, setViewport])
 
+  const updateZoom = useCallback((nextZoom: number) => {
+    setViewport({ zoom: Math.max(0.3, Math.min(3, nextZoom)) })
+  }, [setViewport])
+
+  const zoomIn = useCallback(() => updateZoom(viewport.zoom * 1.15), [updateZoom, viewport.zoom])
+  const zoomOut = useCallback(() => updateZoom(viewport.zoom / 1.15), [updateZoom, viewport.zoom])
+  const resetZoom = useCallback(() => setViewport({ zoom: 1 }), [setViewport])
+
+  const fitBubbles = useCallback((ids?: Set<string>) => {
+    const targetBubbles = ids && ids.size > 0
+      ? filteredBubbles.filter((bubble) => ids.has(bubble.id))
+      : filteredBubbles
+    if (targetBubbles.length === 0) {
+      setViewport({ x: 0, y: 0, zoom: 1 })
+      return
+    }
+
+    const xs = targetBubbles.map((bubble) => bubble.x)
+    const ys = targetBubbles.map((bubble) => bubble.y)
+    const minX = Math.min(...xs)
+    const maxX = Math.max(...xs)
+    const minY = Math.min(...ys)
+    const maxY = Math.max(...ys)
+    const width = Math.max(maxX - minX, 180)
+    const height = Math.max(maxY - minY, 120)
+    const zoom = Math.min(2.4, Math.max(0.35, Math.min(
+      canvasSize.w / (width + 360),
+      canvasSize.h / (height + 260),
+    )))
+
+    setViewport({
+      x: (minX + maxX) / 2,
+      y: (minY + maxY) / 2,
+      zoom,
+    })
+  }, [canvasSize, filteredBubbles, setViewport])
+
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -539,9 +578,68 @@ export default function BubbleCanvas() {
         </div>
       )}
 
-      <div className="absolute bottom-4 left-4 text-[10px] text-on-surface-variant/50 font-mono">
-        缩放: {(viewport.zoom * 100).toFixed(0)}% | 气泡: {filteredBubbles.length}
-        {canvasMode === 'select' && selectedIds.size > 0 && ` | 已选: ${selectedIds.size}`}
+      <div className="absolute bottom-4 left-4 z-[70]">
+        {showZoomMenu && (
+          <div className="absolute bottom-[34px] left-0 z-[70] w-[224px] overflow-hidden rounded-[28px] rounded-bl-[20px] floating-window p-2 animate-bubble-in">
+            {[
+              { label: '放大', shortcut: '⌘ +', icon: ZoomIn, action: zoomIn, disabled: false },
+              { label: '缩小', shortcut: '⌘ -', icon: ZoomOut, action: zoomOut, disabled: false },
+              { label: '回到 100%', shortcut: '⇧ 0', icon: RotateCcw, action: resetZoom, disabled: false },
+              { label: '适配全部', shortcut: '⇧ 1', icon: Maximize2, action: () => fitBubbles(), disabled: filteredBubbles.length === 0 },
+              { label: '适配选区', shortcut: '⇧ 2', icon: MousePointer2, action: () => fitBubbles(selectedIds), disabled: selectedIds.size === 0 },
+            ].map(({ label, shortcut, icon: Icon, action, disabled }) => (
+              <button
+                key={label}
+                onClick={() => {
+                  if (disabled) return
+                  action()
+                  setShowZoomMenu(false)
+                }}
+                disabled={disabled}
+                className="flex h-10 w-full items-center gap-3 rounded-2xl px-3 text-left text-[13px] font-semibold text-on-surface transition-all hover:bg-primary-fixed/38 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Icon size={15} className="text-primary" />
+                <span className="flex-1">{label}</span>
+                <span className="font-mono text-[12px] text-outline">{shortcut}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="floating-window flex h-9 items-center gap-1 rounded-full p-0.5">
+          <button
+            onClick={() => setShowZoomMenu((value) => !value)}
+            className={`flex h-7 min-w-[62px] items-center justify-center rounded-full px-2.5 text-[12px] font-semibold transition-all ${
+              showZoomMenu
+                ? 'bg-primary text-on-primary shadow-glow-primary'
+                : 'bg-white/32 text-on-surface hover:bg-primary-fixed/38 hover:text-primary'
+            }`}
+            title="缩放控制"
+          >
+            {(viewport.zoom * 100).toFixed(0)}%
+          </button>
+
+          <div className="flex h-7 items-center gap-1.5 rounded-full bg-white/24 px-2.5 text-[11px] font-semibold text-on-surface-variant ring-1 ring-white/30">
+            <span>气泡</span>
+            <span className="text-on-surface">{filteredBubbles.length}</span>
+            {canvasMode === 'select' && selectedIds.size > 0 && (
+              <>
+                <span className="h-3 w-px bg-outline-variant/60" />
+                <span>已选</span>
+                <span className="text-primary">{selectedIds.size}</span>
+              </>
+            )}
+          </div>
+
+          <span className="h-4 w-px bg-white/45" />
+
+          <button
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/24 text-on-surface-variant transition-all hover:bg-primary-fixed/38 hover:text-primary"
+            title="画布帮助"
+          >
+            <HelpCircle size={15} />
+          </button>
+        </div>
       </div>
     </div>
   )

@@ -65,7 +65,7 @@ export default function BubbleSpace() {
           </div>
 
           {activePanel && (
-            <div className="absolute right-6 top-20 bottom-44 z-40 w-[340px] max-w-[calc(100%-3rem)]">
+            <div className="absolute right-6 top-20 bottom-48 z-40 w-[280px] max-w-[calc(100%-3rem)]">
               {activePanel === 'tags' && <TagSidebar onClose={() => setActivePanel(null)} />}
               {activePanel === 'ai' && <AICategorizePanel onClose={() => setActivePanel(null)} />}
               {activePanel === 'snapshot' && (
