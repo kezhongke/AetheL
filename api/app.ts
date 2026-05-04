@@ -8,6 +8,12 @@ import dotenv from 'dotenv'
 import aiRoutes from './routes/ai.js'
 import memoryRoutes from './routes/memory.js'
 
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 dotenv.config()
 
 const app: express.Application = express()
@@ -15,6 +21,10 @@ const app: express.Application = express()
 app.use(cors())
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
+
+// 托管前端静态文件
+const distPath = path.join(__dirname, '../dist')
+app.use(express.static(distPath))
 
 app.use('/api/ai', aiRoutes)
 app.use('/api/memory', memoryRoutes)
@@ -28,6 +38,14 @@ app.use(
     })
   },
 )
+
+// 处理 SPA 路由：所有非 API 请求都返回 index.html
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next()
+  }
+  res.sendFile(path.join(distPath, 'index.html'))
+})
 
 app.use((error: Error, req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({
