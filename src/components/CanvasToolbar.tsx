@@ -1,4 +1,4 @@
-import { Hand, MousePointer2, SquareDashedMousePointer } from 'lucide-react'
+import { Hand, MousePointer2, SquareDashedMousePointer, Target } from 'lucide-react'
 import { useBubbleStore } from '@/stores/bubbleStore'
 
 const modes = [
@@ -8,7 +8,7 @@ const modes = [
 ]
 
 export default function CanvasToolbar() {
-  const { canvasMode, setCanvasMode } = useBubbleStore()
+  const { canvasMode, setCanvasMode, setViewport } = useBubbleStore()
 
   return (
     <div className="absolute top-4 left-4 z-30 glass-panel !rounded-2xl p-1.5 flex flex-col gap-1">
@@ -29,6 +29,19 @@ export default function CanvasToolbar() {
           </div>
         </button>
       ))}
+      
+      <div className="h-px bg-outline-variant/30 my-1 mx-1" />
+      
+      <button
+        onClick={() => setViewport({ x: 0, y: 0, zoom: 1 })}
+        className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 text-on-surface-variant hover:text-on-surface hover:bg-surface-container/60 relative group"
+        title="重置视角"
+      >
+        <Target size={16} />
+        <div className="absolute left-full ml-2 px-2 py-1 rounded-lg bg-inverse-surface text-inverse-on-surface text-[10px] font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+          重置视角
+        </div>
+      </button>
     </div>
   )
 }

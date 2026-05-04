@@ -28,6 +28,13 @@ export interface FollowUpResult {
   options: FollowUpOption[]
 }
 
+export interface PrdBubbleInput {
+  id: string
+  content: string
+  tag?: string
+  extensions?: string[]
+}
+
 interface AiState {
   isLoading: boolean
   error: string | null
@@ -37,7 +44,7 @@ interface AiState {
   activeFollowUpBubbleId: string | null
 
   categorize: (bubbles: Array<{ id: string; content: string; tag?: string }>, existingTags?: string[]) => Promise<CategorizeResult | null>
-  generatePrd: (bubbleIds: string[], template?: string, onChunk?: (content: string) => void) => Promise<string>
+  generatePrd: (bubbles: PrdBubbleInput[], template?: string, onChunk?: (content: string) => void) => Promise<string>
   sendChat: (messages: Array<{ role: string; content: string }>, onChunk?: (content: string) => void) => Promise<string>
   followUp: (bubbleContent: string, existingBubbles: string[]) => Promise<FollowUpResult | null>
   clearError: () => void
@@ -81,13 +88,17 @@ export const useAiStore = create<AiState>((set) => ({
     }
   },
 
-  generatePrd: async (bubbleIds, template = 'standard', onChunk) => {
+  generatePrd: async (bubbles, template = 'standard', onChunk) => {
     set({ isLoading: true, error: null })
     try {
       const response = await fetch('/api/ai/generate-prd', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bubbleIds, template }),
+        body: JSON.stringify({
+          bubbleIds: bubbles.map((bubble) => bubble.id),
+          bubbles,
+          template,
+        }),
       })
 
       if (!response.ok) {
@@ -189,7 +200,7 @@ export const useAiStore = create<AiState>((set) => ({
   clearFollowUp: () => set({ followUpResult: null, activeFollowUpBubbleId: null }),
 
   followUp: async (bubbleContent, existingBubbles) => {
-    set({ isLoading: true, error: null })
+    set({ isLoading: true, error: null, followUpResult: null })
     try {
       const response = await fetch('/api/ai/followup', {
         method: 'POST',
@@ -210,8 +221,33 @@ export const useAiStore = create<AiState>((set) => ({
       set({ followUpResult: result, isLoading: false })
       return result
     } catch (error: unknown) {
-      set({ error: (error as Error).message, isLoading: false })
-      return null
+      const fallback: FollowUpResult = {
+        question: '这条灵感还可以从哪个方向补一笔？',
+        options: [
+          {
+            id: '1',
+            text: '补充目标用户',
+            detail: '说明这个想法主要服务谁，以及他们遇到的真实场景。',
+          },
+          {
+            id: '2',
+            text: '补充使用场景',
+            detail: '描述它会在什么时候被触发，以及前后发生了什么。',
+          },
+          {
+            id: '3',
+            text: '补充判断标准',
+            detail: '写下怎样才算这个想法被验证或实现得足够好。',
+          },
+          {
+            id: '4',
+            text: '就这样吧',
+            detail: '保持当前内容不变',
+          },
+        ],
+      }
+      set({ error: (error as Error).message, followUpResult: fallback, isLoading: false })
+      return fallback
     }
   },
 }))

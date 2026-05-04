@@ -1,14 +1,45 @@
 import { create } from 'zustand'
-import type { Bubble, Category } from './bubbleStore'
+import type { Bubble, BubbleExtension, BubbleRelation, Category } from './bubbleStore'
+
+export interface SnapshotAnchor {
+  label: string
+  reason: string
+  bubbleIds: string[]
+}
+
+export interface SnapshotDetailLayer {
+  anchor: string
+  summary: string
+  bubbleIds: string[]
+}
+
+export interface SnapshotDeepLayer {
+  bubbleId: string
+  source: string
+  deepLogic: string
+}
+
+export interface SnapshotCognition {
+  statusSnapshot: string
+  logicFlow: string
+  cognitiveGaps: string[]
+  semanticAnchors: SnapshotAnchor[]
+  wakeTrigger: string
+  level2: SnapshotDetailLayer[]
+  level3: SnapshotDeepLayer[]
+}
 
 export interface Snapshot {
   id: string
   name: string
   thumbnail: string
   createdAt: string
+  cognition: SnapshotCognition
   canvasState: {
     bubbles: Bubble[]
     viewport: { x: number; y: number; zoom: number }
+    relations?: BubbleRelation[]
+    extensions?: BubbleExtension[]
   }
   tagState: {
     tags: string[]
@@ -22,23 +53,79 @@ function generateId(): string {
 
 interface SnapshotState {
   snapshots: Snapshot[]
-  createSnapshot: (name: string, bubbles: Bubble[], viewport: Snapshot['canvasState']['viewport'], categories: Category[]) => Snapshot
+  createSnapshot: (
+    name: string,
+    bubbles: Bubble[],
+    viewport: Snapshot['canvasState']['viewport'],
+    categories: Category[],
+    cognition?: SnapshotCognition,
+    relations?: BubbleRelation[],
+    extensions?: BubbleExtension[],
+  ) => Snapshot
   restoreSnapshot: (id: string) => Snapshot | null
   deleteSnapshot: (id: string) => void
   renameSnapshot: (id: string, name: string) => void
 }
 
+export function createFallbackCognition(bubbles: Bubble[]): SnapshotCognition {
+  const weightedBubbles = [...bubbles].sort((a, b) => (b.interactionWeight || 0) - (a.interactionWeight || 0))
+  const anchors = [...new Set(weightedBubbles.map((b) => b.tag || b.content.slice(0, 8)).filter(Boolean))]
+    .slice(0, 5)
+
+  return {
+    statusSnapshot: bubbles.length > 0
+      ? `围绕 ${anchors[0] || '当前气泡'} 的工作区快照`
+      : '空白工作区快照',
+    logicFlow: bubbles.length > 0
+      ? `从 ${weightedBubbles[0]?.content || '初始想法'} 出发，当前上下文收束了 ${bubbles.length} 个气泡，并等待进一步建立语义关系。`
+      : '当前尚未形成可压缩的上下文脉络。',
+    cognitiveGaps: bubbles.length > 0
+      ? ['需要明确各气泡之间的因果、递进或对比关系', '需要补充下一步可执行动作']
+      : ['需要先创建或选择气泡'],
+    semanticAnchors: anchors.map((label) => ({
+      label,
+      reason: '由标签或高频气泡内容抽取而来',
+      bubbleIds: weightedBubbles
+        .filter((bubble) => bubble.tag === label || bubble.content.includes(label))
+        .map((bubble) => bubble.id)
+        .slice(0, 3),
+    })),
+    wakeTrigger: bubbles.length > 0
+      ? `你上次在这里整理了 ${bubbles.length} 个气泡，核心线索是 ${anchors.join('、') || weightedBubbles[0]?.content}，下一步适合补齐关系与执行路径。`
+      : '你上次停留在一个空白快照，下一步是先捕捉核心气泡。',
+    level2: anchors.map((anchor) => ({
+      anchor,
+      summary: `围绕「${anchor}」继续展开关键论据、关联片段与待验证问题。`,
+      bubbleIds: weightedBubbles
+        .filter((bubble) => bubble.tag === anchor || bubble.content.includes(anchor))
+        .map((bubble) => bubble.id)
+        .slice(0, 3),
+    })),
+    level3: weightedBubbles.slice(0, 5).map((bubble) => ({
+      bubbleId: bubble.id,
+      source: bubble.content,
+      deepLogic: `原始气泡权重 ${bubble.interactionWeight || 0}，可作为后续溯源入口。`,
+    })),
+  }
+}
+
 export const useSnapshotStore = create<SnapshotState>((set, get) => ({
   snapshots: [],
 
-  createSnapshot: (name, bubbles, viewport, categories) => {
+  createSnapshot: (name, bubbles, viewport, categories, cognition, relations = [], extensions = []) => {
     const tags = [...new Set(bubbles.map((b) => b.tag).filter(Boolean))]
     const snapshot: Snapshot = {
       id: generateId(),
       name,
       thumbnail: '',
       createdAt: new Date().toISOString(),
-      canvasState: { bubbles: JSON.parse(JSON.stringify(bubbles)), viewport: { ...viewport } },
+      cognition: cognition || createFallbackCognition(bubbles),
+      canvasState: {
+        bubbles: JSON.parse(JSON.stringify(bubbles)),
+        viewport: { ...viewport },
+        relations: JSON.parse(JSON.stringify(relations)),
+        extensions: JSON.parse(JSON.stringify(extensions)),
+      },
       tagState: { tags, categories: JSON.parse(JSON.stringify(categories)) },
     }
     set((state) => ({ snapshots: [snapshot, ...state.snapshots] }))

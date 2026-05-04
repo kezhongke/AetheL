@@ -1,9 +1,9 @@
 import { NavLink } from 'react-router-dom'
-import { Sparkles, Camera, FileText } from 'lucide-react'
+import { Sparkles, Archive, FileText } from 'lucide-react'
 
 const navItems = [
   { to: '/', icon: Sparkles, label: '灵感气泡' },
-  { to: '/context', icon: Camera, label: '上下文' },
+  { to: '/context', icon: Archive, label: '快照库' },
   { to: '/prd', icon: FileText, label: 'PRD' },
 ]
 

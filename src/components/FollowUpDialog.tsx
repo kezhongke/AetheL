@@ -6,7 +6,7 @@ export default function FollowUpDialog() {
   const { followUpResult, activeFollowUpBubbleId, isLoading, clearFollowUp } = useAiStore()
   const { addExtension } = useBubbleStore()
 
-  if (!followUpResult || !activeFollowUpBubbleId) return null
+  if (!activeFollowUpBubbleId) return null
 
   const handleSelect = (option: { id: string; text: string; detail: string }) => {
     if (option.text === '就这样吧') {
@@ -19,8 +19,8 @@ export default function FollowUpDialog() {
   }
 
   return (
-    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 animate-bubble-in">
-      <div className="glass-panel-mint p-5 min-w-[380px] max-w-[520px]">
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
+      <div className="glass-panel-mint p-6 min-w-[420px] max-w-[560px] shadow-2xl animate-bubble-in">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <MessageCircle size={16} className="text-primary" />
@@ -35,10 +35,10 @@ export default function FollowUpDialog() {
         </div>
 
         <div className="text-[13px] text-on-surface mb-4 leading-relaxed">
-          {followUpResult.question}
+          {followUpResult?.question || '我正在根据这条灵感生成几个追问方向。'}
         </div>
 
-        {isLoading ? (
+        {isLoading || !followUpResult ? (
           <div className="flex items-center justify-center py-4 gap-2 text-on-surface-variant">
             <Loader2 size={16} className="animate-spin text-primary" />
             <span className="text-[13px]">思考中...</span>

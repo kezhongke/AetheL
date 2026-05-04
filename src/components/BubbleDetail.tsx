@@ -1,5 +1,6 @@
-import { X, Trash2, Tag, Palette } from 'lucide-react'
+import { X, Trash2, Tag, Palette, History, Activity } from 'lucide-react'
 import { useBubbleStore } from '@/stores/bubbleStore'
+import { useSnapshotStore } from '@/stores/snapshotStore'
 
 const TAG_COLORS = [
   '#246a52', '#795900', '#ba1a1a', '#5e5e5b',
@@ -8,7 +9,13 @@ const TAG_COLORS = [
 
 export default function BubbleDetail() {
   const { bubbles, selectedBubbleId, selectBubble, updateBubble, deleteBubble } = useBubbleStore()
+  const snapshots = useSnapshotStore((s) => s.snapshots)
   const bubble = bubbles.find((b) => b.id === selectedBubbleId)
+  const snapshotCount = bubble
+    ? snapshots.filter((snapshot) =>
+      snapshot.canvasState.bubbles.some((snapshotBubble) => snapshotBubble.id === bubble.id)
+    ).length
+    : 0
 
   if (!bubble) return null
 
@@ -66,6 +73,23 @@ export default function BubbleDetail() {
 
       <div className="text-[11px] text-outline font-mono">
         创建: {new Date(bubble.createdAt).toLocaleString('zh-CN')}
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-xl bg-white/35 border border-outline-variant/20 p-2.5">
+          <div className="flex items-center gap-1.5 text-[11px] text-on-surface-variant font-semibold tracking-wider">
+            <Activity size={11} className="text-primary" />
+            交互权重
+          </div>
+          <div className="text-lg font-serif text-primary mt-1">{bubble.interactionWeight || 0}</div>
+        </div>
+        <div className="rounded-xl bg-white/35 border border-outline-variant/20 p-2.5">
+          <div className="flex items-center gap-1.5 text-[11px] text-on-surface-variant font-semibold tracking-wider">
+            <History size={11} className="text-primary" />
+            参与快照
+          </div>
+          <div className="text-lg font-serif text-primary mt-1">{snapshotCount}</div>
+        </div>
       </div>
 
       <button

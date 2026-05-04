@@ -8,6 +8,7 @@ export interface Bubble {
   categoryId: string
   x: number
   y: number
+  interactionWeight?: number
   createdAt: string
   updatedAt: string
 }
@@ -60,6 +61,7 @@ interface BubbleState {
   deleteBubble: (id: string) => void
   moveBubble: (id: string, x: number, y: number) => void
   selectBubble: (id: string | null) => void
+  incrementBubbleWeight: (id: string) => void
   setFilterTag: (tag: string | null) => void
   setViewport: (viewport: Partial<BubbleState['viewport']>) => void
   setCanvasMode: (mode: BubbleState['canvasMode']) => void
@@ -99,8 +101,9 @@ export const useBubbleStore = create<BubbleState>((set, get) => ({
       tag,
       color: TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)],
       categoryId: '',
-      x: x ?? Math.random() * 600 + 100,
-      y: y ?? Math.random() * 400 + 100,
+      x: x ?? (Math.random() - 0.5) * 200,
+      y: y ?? (Math.random() - 0.5) * 200,
+      interactionWeight: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -132,7 +135,26 @@ export const useBubbleStore = create<BubbleState>((set, get) => ({
     }))
   },
 
-  selectBubble: (id) => set({ selectedBubbleId: id }),
+  selectBubble: (id) => {
+    if (!id) {
+      set({ selectedBubbleId: null })
+      return
+    }
+    set((state) => ({
+      selectedBubbleId: id,
+      bubbles: state.bubbles.map((b) =>
+        b.id === id ? { ...b, interactionWeight: (b.interactionWeight || 0) + 1 } : b
+      ),
+    }))
+  },
+
+  incrementBubbleWeight: (id) => {
+    set((state) => ({
+      bubbles: state.bubbles.map((b) =>
+        b.id === id ? { ...b, interactionWeight: (b.interactionWeight || 0) + 1 } : b
+      ),
+    }))
+  },
 
   setFilterTag: (tag) => set({ filterTag: tag }),
 

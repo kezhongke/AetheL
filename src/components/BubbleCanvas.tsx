@@ -23,7 +23,7 @@ export default function BubbleCanvas() {
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
   const [editingBubble, setEditingBubble] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
-  const [canvasSize, setCanvasSize] = useState({ w: 0, h: 0 })
+  const [canvasSize, setCanvasSize] = useState({ w: typeof window !== 'undefined' ? window.innerWidth : 1000, h: typeof window !== 'undefined' ? window.innerHeight : 800 })
   const [selectionBox, setSelectionBox] = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const animRef = useRef<number>(0)
@@ -81,6 +81,7 @@ export default function BubbleCanvas() {
     ctx.fillStyle = '#fbf9f8'
     ctx.fillRect(0, 0, canvasSize.w, canvasSize.h)
 
+    // 绘制网格
     ctx.strokeStyle = '#e4e2e1'
     ctx.lineWidth = 1
     const gridSize = 40 * viewport.zoom
@@ -99,6 +100,7 @@ export default function BubbleCanvas() {
       ctx.stroke()
     }
 
+    // 绘制关系线
     filteredRelations.forEach((rel) => {
       const source = filteredBubbles.find((b) => b.id === rel.sourceId)
       const target = filteredBubbles.find((b) => b.id === rel.targetId)
@@ -109,16 +111,20 @@ export default function BubbleCanvas() {
 
       ctx.beginPath()
       ctx.setLineDash([6, 4])
-      ctx.strokeStyle = rel.type === 'contradictory' ? 'rgba(186, 26, 26, 0.25)' : rel.type === 'duplicate' ? 'rgba(121, 89, 0, 0.25)' : 'rgba(36, 106, 82, 0.2)'
-      ctx.lineWidth = 1.5
+      ctx.strokeStyle = rel.type === 'contradictory' ? 'rgba(186, 26, 26, 0.4)' : rel.type === 'duplicate' ? 'rgba(121, 89, 0, 0.4)' : 'rgba(36, 106, 82, 0.3)'
+      ctx.lineWidth = 2
       ctx.moveTo(sp.x, sp.y)
       ctx.lineTo(tp.x, tp.y)
       ctx.stroke()
       ctx.setLineDash([])
     })
 
+    // 绘制气泡
     filteredBubbles.forEach((bubble) => {
-      const pos = worldToScreen(bubble.x, bubble.y)
+      if (!bubble) return
+      const pos = worldToScreen(bubble.x || 0, bubble.y || 0)
+      if (isNaN(pos.x) || isNaN(pos.y)) return
+
       const isSelected = bubble.id === selectedBubbleId
       const isDragging = bubble.id === dragging
       const isInSelection = selectedIds.has(bubble.id)
@@ -141,25 +147,37 @@ export default function BubbleCanvas() {
       const radius = 16 * viewport.zoom
 
       if (isSelected || isDragging || isInSelection) {
-        ctx.shadowColor = 'rgba(36, 106, 82, 0.2)'
-        ctx.shadowBlur = 20
+        ctx.shadowColor = 'rgba(36, 106, 82, 0.3)'
+        ctx.shadowBlur = 25
       }
 
+      // 兼容性更好的圆角矩形绘制
+      const x = -bubbleWidth / 2
+      const y = -bubbleHeight / 2
       ctx.beginPath()
-      ctx.roundRect(-bubbleWidth / 2, -bubbleHeight / 2, bubbleWidth, bubbleHeight, radius)
+      ctx.moveTo(x + radius, y)
+      ctx.lineTo(x + bubbleWidth - radius, y)
+      ctx.quadraticCurveTo(x + bubbleWidth, y, x + bubbleWidth, y + radius)
+      ctx.lineTo(x + bubbleWidth, y + bubbleHeight - radius)
+      ctx.quadraticCurveTo(x + bubbleWidth, y + bubbleHeight, x + bubbleWidth - radius, y + bubbleHeight)
+      ctx.lineTo(x + radius, y + bubbleHeight)
+      ctx.quadraticCurveTo(x, y + bubbleHeight, x, y + bubbleHeight - radius)
+      ctx.lineTo(x, y + radius)
+      ctx.quadraticCurveTo(x, y, x + radius, y)
+      ctx.closePath()
 
       const gradient = ctx.createLinearGradient(-bubbleWidth / 2, 0, bubbleWidth / 2, 0)
-      gradient.addColorStop(0, 'rgba(255, 255, 255, 0.6)')
-      gradient.addColorStop(1, 'rgba(255, 255, 255, 0.3)')
+      gradient.addColorStop(0, '#ffffff')
+      gradient.addColorStop(1, '#f0faf5')
       ctx.fillStyle = gradient
       ctx.fill()
 
       if (isInSelection) {
-        ctx.strokeStyle = 'rgba(36, 106, 82, 0.6)'
-        ctx.lineWidth = 2
+        ctx.strokeStyle = '#246a52'
+        ctx.lineWidth = 3
       } else {
-        ctx.strokeStyle = isSelected ? 'rgba(36, 106, 82, 0.5)' : 'rgba(191, 201, 194, 0.5)'
-        ctx.lineWidth = isSelected ? 2 : 1
+        ctx.strokeStyle = isSelected ? '#246a52' : 'rgba(36, 106, 82, 0.6)'
+        ctx.lineWidth = isSelected ? 3 : 1.5
       }
       ctx.stroke()
 
@@ -187,9 +205,20 @@ export default function BubbleCanvas() {
         const tagHeight = 14 * viewport.zoom
         const tagX = -tagWidth / 2
         const tagY = -bubbleHeight / 2 - tagHeight - 2 * viewport.zoom
+        const tr = 4 * viewport.zoom
 
         ctx.beginPath()
-        ctx.roundRect(tagX, tagY, tagWidth, tagHeight, 4 * viewport.zoom)
+        ctx.moveTo(tagX + tr, tagY)
+        ctx.lineTo(tagX + tagWidth - tr, tagY)
+        ctx.quadraticCurveTo(tagX + tagWidth, tagY, tagX + tagWidth, tagY + tr)
+        ctx.lineTo(tagX + tagWidth, tagY + tagHeight - tr)
+        ctx.quadraticCurveTo(tagX + tagWidth, tagY + tagHeight, tagX + tagWidth - tr, tagY + tagHeight)
+        ctx.lineTo(tagX + tr, tagY + tagHeight)
+        ctx.quadraticCurveTo(tagX, tagY + tagHeight, tagX, tagY + tagHeight - tr)
+        ctx.lineTo(tagX, tagY + tr)
+        ctx.quadraticCurveTo(tagX, tagY, tagX + tr, tagY)
+        ctx.closePath()
+        
         ctx.fillStyle = 'rgba(170, 240, 209, 0.3)'
         ctx.fill()
 
@@ -411,7 +440,7 @@ export default function BubbleCanvas() {
   }
 
   return (
-    <div ref={containerRef} className={`flex-1 relative overflow-hidden ${panning ? 'cursor-grabbing' : cursorMap[canvasMode]}`}>
+    <div ref={containerRef} className={`absolute inset-0 overflow-hidden ${panning ? 'cursor-grabbing' : cursorMap[canvasMode]}`}>
       <canvas
         ref={canvasRef}
         className="absolute inset-0"

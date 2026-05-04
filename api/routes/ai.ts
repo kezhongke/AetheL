@@ -1,5 +1,8 @@
 import { Router, type Request, type Response } from 'express'
 import OpenAI from 'openai'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 const router = Router()
 
@@ -125,14 +128,29 @@ ${bubbles.map((b: { id: string; content: string; tag?: string }) => `[${b.id}] $
 
 router.post('/generate-prd', async (req: Request, res: Response) => {
   try {
-    const { bubbleIds, template = 'standard', modules } = req.body
+    const { bubbleIds, bubbles, template = 'standard', modules } = req.body
 
-    if (!bubbleIds || !Array.isArray(bubbleIds)) {
-      res.status(400).json({ success: false, error: 'bubbleIds is required' })
+    if ((!bubbles || !Array.isArray(bubbles) || bubbles.length === 0) && (!bubbleIds || !Array.isArray(bubbleIds))) {
+      res.status(400).json({ success: false, error: 'bubbles or bubbleIds is required' })
       return
     }
 
-    const bubblesContent = bubbleIds.map((id: string) => `气泡ID: ${id}`).join('\n')
+    const bubblesContent = Array.isArray(bubbles) && bubbles.length > 0
+      ? bubbles.map((bubble: { id: string; content: string; tag?: string; extensions?: string[] }, index: number) => {
+        const lines = [
+          `气泡 ${index + 1}`,
+          `ID: ${bubble.id}`,
+          `内容: ${bubble.content}`,
+        ]
+        if (bubble.tag) {
+          lines.push(`标签: ${bubble.tag}`)
+        }
+        if (bubble.extensions?.length) {
+          lines.push(`追问补充: ${bubble.extensions.join('；')}`)
+        }
+        return lines.join('\n')
+      }).join('\n\n')
+      : bubbleIds.map((id: string) => `气泡ID: ${id}`).join('\n')
 
     const systemPrompt = `你是一个专业的产品经理，擅长撰写高质量的PRD文档。
 根据用户提供的灵感气泡内容，生成结构化的PRD文档。
@@ -151,7 +169,7 @@ ${modules ? `需要包含的模块：${modules.join('、')}` : ''}
       model: 'moonshotai/Kimi-K2.5',
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `请根据以下灵感气泡生成PRD：\n${bubblesContent}` },
+        { role: 'user', content: `请根据以下灵感气泡的详细内容生成PRD，不要只引用气泡ID，要吸收每个气泡的内容、标签和追问补充：\n\n${bubblesContent}` },
       ],
       stream: true,
     })
@@ -168,6 +186,96 @@ ${modules ? `需要包含的模块：${modules.join('、')}` : ''}
   } catch (error: unknown) {
     console.error('AI generate-prd error:', error)
     res.status(500).json({ success: false, error: (error as Error).message || 'AI generate PRD error' })
+  }
+})
+
+router.post('/snapshot', async (req: Request, res: Response) => {
+  try {
+    const { bubbles, categories = [] } = req.body
+
+    if (!bubbles || !Array.isArray(bubbles)) {
+      res.status(400).json({ success: false, error: 'bubbles is required' })
+      return
+    }
+
+    const systemPrompt = `你是一个认知负荷优化专家，也是一名认知架构师。你的任务是根据用户选择的知识气泡，构建一个高维度的工作区快照。
+
+任务目标：
+1. 语义聚类：识别气泡间的隐含逻辑，如因果、递进、对比、冲突或互补，而非单纯按时间排序。
+2. 认知压缩：生成长度适中的上下文摘要，作为用户进入工作区的精神索引。
+3. 提取语义锚点：从杂乱气泡中提取 3-5 个核心关键词，作为二级交互入口。
+4. 渐进式披露：Level 1 只给核心结论或概念标签；Level 2 给核心论据、关键参数和关联上下文片段；Level 3 才给原始引用、复杂因果推演和溯源支持。
+5. 快照恢复：生成一段唤醒指令，帮助用户快速回到上次的思维状态。
+
+语言风格：
+使用清晰但有温度的中文，避免机械化的“第一、第二”。可以用“从……出发，我们穿过……，最终汇聚于……”这样的逻辑流叙述，但保持克制。
+
+请只返回严格 JSON，不要包含 Markdown 或额外说明：
+{
+  "statusSnapshot": "一句话定义该工作区的核心议题",
+  "logicFlow": "约200-300字，串联选定气泡的逻辑脉络",
+  "cognitiveGaps": ["尚不明确或需要进一步探索的点"],
+  "semanticAnchors": [
+    {"label": "核心关键词", "reason": "为何成为锚点", "bubbleIds": ["关联气泡ID"]}
+  ],
+  "wakeTrigger": "你上次在这里讨论到关于 [A模块] 的 [B逻辑] 冲突，目前的结论是 [C]，下一步计划是 [D]。",
+  "level2": [
+    {"anchor": "锚点", "summary": "只解释为什么和是什么，不输出三级技术细节", "bubbleIds": ["关联气泡ID"]}
+  ],
+  "level3": [
+    {"bubbleId": "气泡ID", "source": "原始引用或来源", "deepLogic": "深层因果、变更或溯源逻辑"}
+  ]
+}`
+
+    const bubbleLines = bubbles.map((bubble: {
+      id: string
+      content: string
+      tag?: string
+      interactionWeight?: number
+      extensions?: string[]
+    }, index: number) => {
+      const lines = [
+        `气泡 ${index + 1}`,
+        `ID: ${bubble.id}`,
+        `内容: ${bubble.content}`,
+        `权重: ${bubble.interactionWeight || 0}`,
+      ]
+      if (bubble.tag) lines.push(`标签: ${bubble.tag}`)
+      if (bubble.extensions?.length) lines.push(`追问补充: ${bubble.extensions.join('；')}`)
+      return lines.join('\n')
+    }).join('\n\n')
+
+    const categoryLines = Array.isArray(categories) && categories.length > 0
+      ? categories.map((category: { name: string; description?: string }) => `- ${category.name}${category.description ? `：${category.description}` : ''}`).join('\n')
+      : '无'
+
+    const response = await client.chat.completions.create({
+      model: 'moonshotai/Kimi-K2.5',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `当前分类：\n${categoryLines}\n\n用户选择的气泡：\n${bubbleLines}` },
+      ],
+      stream: false,
+    })
+
+    const content = response.choices[0]?.message?.content || '{}'
+    let parsed
+    try {
+      const jsonMatch = content.match(/\{[\s\S]*\}/)
+      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : content)
+    } catch {
+      parsed = null
+    }
+
+    if (!parsed) {
+      res.status(502).json({ success: false, error: 'AI snapshot response parse failed' })
+      return
+    }
+
+    res.json({ success: true, ...parsed })
+  } catch (error: unknown) {
+    console.error('AI snapshot error:', error)
+    res.status(500).json({ success: false, error: (error as Error).message || 'AI snapshot error' })
   }
 })
 

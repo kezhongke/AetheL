@@ -1,4 +1,7 @@
 import { Router, type Request, type Response } from 'express'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 const router = Router()
 

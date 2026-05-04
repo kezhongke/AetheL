@@ -7,7 +7,7 @@ import { usePrdStore } from '@/stores/prdStore'
 import { useAiStore } from '@/stores/aiStore'
 
 export default function PrdOutput() {
-  const { bubbles } = useBubbleStore()
+  const { bubbles, extensions } = useBubbleStore()
   const { generatedContent, isGenerating, setGenerating, setGeneratedContent, appendGeneratedContent, template, setTemplate } = usePrdStore()
   const { generatePrd } = useAiStore()
 
@@ -36,14 +36,25 @@ export default function PrdOutput() {
     setGenerating(true)
     setGeneratedContent('')
 
+    const selectedBubbles = bubbles
+      .filter((bubble) => selectedBubbleIds.has(bubble.id))
+      .map((bubble) => ({
+        id: bubble.id,
+        content: bubble.content,
+        tag: bubble.tag || undefined,
+        extensions: extensions
+          .filter((extension) => extension.bubbleId === bubble.id)
+          .map((extension) => extension.content),
+      }))
+
     await generatePrd(
-      Array.from(selectedBubbleIds),
+      selectedBubbles,
       template,
       (chunk) => appendGeneratedContent(chunk)
     )
 
     setGenerating(false)
-  }, [selectedBubbleIds, template, generatePrd, setGenerating, setGeneratedContent, appendGeneratedContent])
+  }, [bubbles, extensions, selectedBubbleIds, template, generatePrd, setGenerating, setGeneratedContent, appendGeneratedContent])
 
   const handleExportMarkdown = () => {
     const content = generatedContent
