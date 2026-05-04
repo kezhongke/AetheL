@@ -1,9 +1,16 @@
 import { useMemo, useState } from 'react'
 import { Loader2, MessageCircle, Pencil, Plus, Send, Sparkles, X } from 'lucide-react'
+import FollowUpDialog from '@/components/FollowUpDialog'
 import { useAiStore } from '@/stores/aiStore'
 import { useBubbleStore } from '@/stores/bubbleStore'
 
 type AssistantMode = 'add' | 'rewrite' | 'extend' | 'followup'
+
+interface BubbleAIAssistantProps {
+  selectedBubbleIds?: string[]
+  onRemoveSelectedBubble?: (id: string) => void
+  onClearSelectedBubbles?: () => void
+}
 
 const modes: Array<{
   id: AssistantMode
@@ -37,28 +44,54 @@ const modes: Array<{
   },
 ]
 
-export default function BubbleAIAssistant() {
+export default function BubbleAIAssistant({
+  selectedBubbleIds = [],
+  onRemoveSelectedBubble,
+  onClearSelectedBubbles,
+}: BubbleAIAssistantProps) {
   const {
     bubbles,
+    relations,
     selectedBubbleId,
     selectBubble,
     addBubble,
     updateBubble,
     addExtension,
   } = useBubbleStore()
-  const { followUp, isLoading } = useAiStore()
+  const { followUp, isLoading, clearFollowUp } = useAiStore()
   const [mode, setMode] = useState<AssistantMode>('rewrite')
   const [instruction, setInstruction] = useState('')
 
-  const bubble = useMemo(
+  const selectedBubble = useMemo(
     () => bubbles.find((item) => item.id === selectedBubbleId),
     [bubbles, selectedBubbleId],
   )
+  const selectedBubbles = useMemo(
+    () => selectedBubbleIds
+      .map((id) => bubbles.find((item) => item.id === id))
+      .filter((item): item is NonNullable<typeof item> => Boolean(item)),
+    [bubbles, selectedBubbleIds],
+  )
+  const bubble = selectedBubble || (selectedBubbles.length === 1 ? selectedBubbles[0] : undefined)
+  const contextLabel = selectedBubbles.length > 1
+    ? `已选 ${selectedBubbles.length} 个气泡`
+    : bubble
+      ? `正在处理：${bubble.content}`
+      : '捕捉新的产品构思'
+  const hasSelectedBubbles = selectedBubbles.length > 0
+  const isMultiBubbleContext = selectedBubbles.length >= 2
 
-  const availableModes = bubble ? modes.filter((item) => item.id !== 'add') : modes.filter((item) => item.id === 'add')
-  const normalizedMode = bubble && mode === 'add' ? 'rewrite' : !bubble ? 'add' : mode
+  const availableModes = isMultiBubbleContext
+    ? modes.filter((item) => item.id === 'followup')
+    : bubble
+      ? modes.filter((item) => item.id !== 'add')
+      : modes.filter((item) => item.id === 'add')
+  const normalizedMode = isMultiBubbleContext ? 'followup' : bubble && mode === 'add' ? 'rewrite' : !bubble ? 'add' : mode
   const activeMode = modes.find((item) => item.id === normalizedMode) || modes[0]
-  const canSubmit = instruction.trim().length > 0 || (bubble && normalizedMode === 'followup')
+  const placeholder = isMultiBubbleContext
+    ? '追问这些气泡之间的关系、冲突、依赖或下一步判断...'
+    : activeMode.placeholder
+  const canSubmit = instruction.trim().length > 0 || ((bubble || isMultiBubbleContext) && normalizedMode === 'followup')
 
   const handleSubmit = async () => {
     const value = instruction.trim()
@@ -67,8 +100,55 @@ export default function BubbleAIAssistant() {
       if (!value) return
       const id = addBubble(value)
       selectBubble(id)
-      useAiStore.setState({ activeFollowUpBubbleId: id })
+      useAiStore.setState({ activeFollowUpBubbleId: id, activeFollowUpBubbleIds: [id] })
       await followUp(value, bubbles.map((item) => item.content))
+      setInstruction('')
+      return
+    }
+
+    if (isMultiBubbleContext) {
+      const selectedIdSet = new Set(selectedBubbles.map((item) => item.id))
+      const selectedRelations = relations.filter((relation) => (
+        selectedIdSet.has(relation.sourceId) && selectedIdSet.has(relation.targetId)
+      ))
+      const bubbleContext = selectedBubbles
+        .map((item, index) => [
+          `气泡 ${index + 1}`,
+          `ID: ${item.id}`,
+          `内容: ${item.content}`,
+          item.tag ? `标签: ${item.tag}` : '',
+        ].filter(Boolean).join('\n'))
+        .join('\n')
+      const relationContext = selectedRelations.length > 0
+        ? selectedRelations
+          .map((relation) => {
+            const source = selectedBubbles.find((item) => item.id === relation.sourceId)?.content || relation.sourceId
+            const target = selectedBubbles.find((item) => item.id === relation.targetId)?.content || relation.targetId
+            return `- ${relation.type}:「${source}」↔「${target}」，原因：${relation.reason}`
+          })
+          .join('\n')
+        : '暂无显式关系线，请先根据内容判断它们的潜在关系。'
+      const context = [
+        '请围绕以下多个产品构思气泡之间的关系继续追问，而不是只追问其中某一个气泡。',
+        '',
+        '所选气泡：',
+        bubbleContext,
+        '',
+        '已有关系：',
+        relationContext,
+        '',
+        value ? `用户希望追问的方向：${value}` : '请优先追问它们之间的依赖、冲突、重复、合并路径或关键验证问题。',
+      ].join('\n')
+
+      useAiStore.setState({
+        activeFollowUpBubbleId: selectedBubbles[0]?.id || null,
+        activeFollowUpBubbleIds: selectedBubbles.map((item) => item.id),
+      })
+      await followUp(
+        context,
+        bubbles.map((item) => `ID: ${item.id}\n内容: ${item.content}${item.tag ? `\n标签: ${item.tag}` : ''}`),
+        { mode: 'relationship', targetBubbleIds: selectedBubbles.map((item) => item.id) },
+      )
       setInstruction('')
       return
     }
@@ -92,7 +172,7 @@ export default function BubbleAIAssistant() {
     const context = value
       ? `${bubble.content}\n\n用户希望继续追问的方向：${value}`
       : bubble.content
-    useAiStore.setState({ activeFollowUpBubbleId: bubble.id })
+    useAiStore.setState({ activeFollowUpBubbleId: bubble.id, activeFollowUpBubbleIds: [bubble.id] })
     await followUp(context, bubbles.map((item) => item.content))
     setInstruction('')
   }
@@ -103,25 +183,79 @@ export default function BubbleAIAssistant() {
         <div className="flex items-center gap-3">
           <div className="min-w-0 flex-1">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-2">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
                 <Sparkles size={15} className="text-primary" />
-                <span className="truncate text-[13px] font-semibold text-on-surface">
-                  {bubble ? `正在处理：${bubble.content}` : '捕捉新的产品构思'}
+                <span className="min-w-[92px] max-w-[260px] shrink truncate text-[13px] font-semibold text-on-surface">
+                  {contextLabel}
                 </span>
+                {hasSelectedBubbles && (
+                  <div className="relative min-w-0 flex-1">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-6 bg-gradient-to-r from-[#fff8f6] to-transparent" />
+                    <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-[#fff8f6] to-transparent" />
+                    <div className="scrollbar-none flex items-center gap-1 overflow-x-auto px-3">
+                      {selectedBubbles.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex h-6 max-w-[138px] shrink-0 items-center gap-1 rounded-full border px-1.5 text-left transition-colors hover:shadow-glass"
+                          style={{
+                            backgroundColor: `${item.color || '#94a3b8'}1f`,
+                            borderColor: `${item.color || '#94a3b8'}55`,
+                          }}
+                          title={item.content}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => selectBubble(item.id)}
+                            className="flex min-w-0 flex-1 items-center gap-1 text-left"
+                          >
+                            <span
+                              className="h-3 w-3 shrink-0 rounded-full ring-2 ring-white/70"
+                              style={{ backgroundColor: item.color || '#94a3b8' }}
+                            />
+                            <span className="min-w-0 truncate text-[10px] font-semibold leading-none text-on-surface">
+                              {item.content}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              onRemoveSelectedBubble?.(item.id)
+                            }}
+                            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-on-surface-variant/65 transition-all hover:bg-white/70 hover:text-primary"
+                            title="移出选区"
+                          >
+                            <X size={10} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-              {bubble && (
+              {(bubble || hasSelectedBubbles) && (
                 <button
-                  onClick={() => selectBubble(null)}
+                  onClick={() => {
+                    if (hasSelectedBubbles) {
+                      clearFollowUp()
+                      onClearSelectedBubbles?.()
+                      return
+                    }
+                    clearFollowUp()
+                    selectBubble(null)
+                  }}
                   className="flex h-7 w-7 items-center justify-center rounded-full text-outline hover:bg-surface-container/70 hover:text-on-surface"
-                  title="关闭气泡 AI 输入"
+                  title={hasSelectedBubbles ? '清空全部选中气泡' : '关闭气泡 AI 输入'}
                 >
                   <X size={14} />
                 </button>
               )}
             </div>
 
+            <FollowUpDialog />
+
             <div className="flex flex-col gap-2 md:flex-row">
-              {availableModes.length > 1 && (
+              {(availableModes.length > 1 || isMultiBubbleContext) && (
                 <div className="flex shrink-0 rounded-full bg-white/50 p-1 ring-1 ring-outline-variant/30">
                   {availableModes.map(({ id, label, icon: Icon }) => (
                     <button
@@ -148,7 +282,7 @@ export default function BubbleAIAssistant() {
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') handleSubmit()
                   }}
-                  placeholder={activeMode.placeholder}
+                  placeholder={placeholder}
                   className="input-field h-12 w-full pr-[72px] text-[13px]"
                 />
                 <div className="pointer-events-none absolute right-10 top-1/2 h-9 w-16 -translate-y-1/2 bg-gradient-to-r from-white/0 via-white/70 to-white/95" />

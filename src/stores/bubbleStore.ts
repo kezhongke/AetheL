@@ -108,6 +108,26 @@ function pickDistinctCategoryColor(index: number, usedColors: Set<string>, prefe
   }
 }
 
+function getClusteredBubblePosition(categoryIndex: number, categoryCount: number, itemIndex: number, itemCount: number) {
+  const safeCategoryCount = Math.max(categoryCount, 1)
+  const clusterRadius = Math.max(300, safeCategoryCount * 150)
+  const categoryAngle = -Math.PI / 2 + (categoryIndex / safeCategoryCount) * Math.PI * 2
+  const categoryCenterX = Math.cos(categoryAngle) * clusterRadius
+  const categoryCenterY = Math.sin(categoryAngle) * clusterRadius
+
+  if (itemCount <= 1) {
+    return { x: categoryCenterX, y: categoryCenterY }
+  }
+
+  const localRadius = Math.min(210, Math.max(92, 54 + itemCount * 22))
+  const localAngle = -Math.PI / 2 + (itemIndex / itemCount) * Math.PI * 2 + (categoryIndex % 2) * 0.28
+
+  return {
+    x: categoryCenterX + Math.cos(localAngle) * localRadius,
+    y: categoryCenterY + Math.sin(localAngle) * localRadius,
+  }
+}
+
 interface BubbleState {
   bubbles: Bubble[]
   categories: Category[]
@@ -380,11 +400,37 @@ export const useBubbleStore = create<BubbleState>()(persist((set, get) => ({
           categoryByBubbleId.set(bubbleId, { category, tag })
         })
       })
+      const positionByBubbleId = new Map<string, { x: number; y: number }>()
+      aiCategories.forEach((aiCat, categoryIndex) => {
+        const bubbleIds = aiCat.bubbleIds.filter((bubbleId) => state.bubbles.some((bubble) => bubble.id === bubbleId))
+        bubbleIds.forEach((bubbleId, itemIndex) => {
+          positionByBubbleId.set(
+            bubbleId,
+            getClusteredBubblePosition(categoryIndex, aiCategories.length, itemIndex, bubbleIds.length),
+          )
+        })
+      })
+      const unassignedBubbles = state.bubbles.filter((bubble) => !positionByBubbleId.has(bubble.id))
+      unassignedBubbles.forEach((bubble, index) => {
+        const column = index % 4
+        const row = Math.floor(index / 4)
+        positionByBubbleId.set(bubble.id, {
+          x: (column - 1.5) * 220,
+          y: Math.max(360, aiCategories.length * 120) + row * 130,
+        })
+      })
 
       const updatedBubbles = state.bubbles.map((bubble) => {
         const assignment = categoryByBubbleId.get(bubble.id)
+        const position = positionByBubbleId.get(bubble.id)
         if (!assignment) {
-          return bubble.categoryId ? { ...bubble, categoryId: '', updatedAt: now } : bubble
+          const shouldUpdate = Boolean(position || bubble.categoryId)
+          return {
+            ...bubble,
+            ...(bubble.categoryId ? { categoryId: '' } : {}),
+            ...(position || {}),
+            updatedAt: shouldUpdate ? now : bubble.updatedAt,
+          }
         }
 
         return {
@@ -392,6 +438,7 @@ export const useBubbleStore = create<BubbleState>()(persist((set, get) => ({
           categoryId: assignment.category.id,
           tag: assignment.tag,
           color: assignment.category.color,
+          ...(position || {}),
           updatedAt: now,
         }
       })

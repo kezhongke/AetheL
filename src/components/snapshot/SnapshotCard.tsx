@@ -28,8 +28,137 @@ export default function SnapshotCard({
   const weightedBubbles = [...snapshot.canvasState.bubbles]
     .sort((a, b) => (b.interactionWeight || 0) - (a.interactionWeight || 0))
 
+  if (compact) {
+    return (
+      <div className="group relative overflow-hidden rounded-[26px] bg-white/42 p-3.5 ring-1 ring-white/60 transition-all hover:shadow-glass-hover">
+        <div className="absolute right-2.5 top-2.5 flex items-center gap-0.5">
+          <button
+            onClick={onRestore}
+            className="flex h-7 w-7 items-center justify-center rounded-full text-primary/70 transition-all hover:bg-primary-fixed/45 hover:text-primary"
+            title="恢复快照"
+          >
+            <RotateCcw size={13} />
+          </button>
+          {onDelete && (
+            <button
+              onClick={onDelete}
+              className="flex h-7 w-7 items-center justify-center rounded-full text-error/45 transition-all hover:bg-error-container/35 hover:text-error"
+              title="删除快照"
+            >
+              <Trash2 size={13} />
+            </button>
+          )}
+          <button
+            onClick={onToggleExpand}
+            className="flex h-7 w-7 items-center justify-center rounded-full text-on-surface-variant transition-all hover:bg-white/55 hover:text-on-surface"
+            title={expanded ? '收起' : '展开'}
+          >
+            {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          </button>
+        </div>
+
+        <button onClick={onToggleExpand} className="block w-full pr-20 text-left">
+          <div className="truncate text-[15px] font-semibold leading-5 text-on-surface">{snapshot.name}</div>
+          <div className="mt-1 font-mono text-[11px] text-outline">{formatTime(snapshot.createdAt)}</div>
+        </button>
+
+        <div className="mt-3 flex items-center gap-2">
+          <span className="rounded-full bg-primary-fixed/70 px-2.5 py-1 text-[11px] font-semibold text-primary">
+            Level 1
+          </span>
+          <span className="h-px flex-1 bg-outline-variant/20" />
+        </div>
+
+        <button onClick={onToggleExpand} className="mt-3 block w-full text-left">
+          <p className="line-clamp-4 text-[13px] leading-6 text-on-surface">
+            {cognition.statusSnapshot}
+          </p>
+
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {cognition.semanticAnchors.slice(0, 4).map((anchor) => (
+              <span key={anchor.label} className="rounded-full bg-primary-fixed/34 px-2.5 py-1 text-[11px] font-medium text-on-surface-variant">
+                {anchor.label}
+              </span>
+            ))}
+          </div>
+
+          <div className="mt-3 grid grid-cols-3 gap-1.5">
+            {[
+              { value: snapshot.canvasState.bubbles.length, label: '气泡' },
+              { value: snapshot.tagState.categories.length, label: '分类' },
+              { value: snapshot.tagState.tags.length, label: '标签' },
+            ].map((item) => (
+              <div key={item.label} className="rounded-[16px] bg-white/38 px-2 py-1.5 text-center ring-1 ring-white/50">
+                <div className="text-[13px] font-semibold leading-4 text-on-surface">{item.value}</div>
+                <div className="mt-0.5 text-[10px] leading-3 text-outline">{item.label}</div>
+              </div>
+            ))}
+          </div>
+        </button>
+
+        {expanded && (
+          <div className="mt-3 space-y-3 border-t border-outline-variant/20 pt-3">
+            <div className="rounded-[20px] bg-white/34 p-3 ring-1 ring-white/55">
+              <div className="mb-1.5 flex items-center gap-1.5 text-primary">
+                <Layers3 size={12} />
+                <span className="text-[11px] font-semibold">Level 2 逻辑脉络</span>
+              </div>
+              <p className="text-[12px] leading-5 text-on-surface-variant">{cognition.logicFlow}</p>
+            </div>
+
+            <div className="rounded-[20px] bg-white/30 p-3 ring-1 ring-white/50">
+              <div className="mb-2 flex items-center gap-1.5 text-on-surface">
+                <KeyRound size={12} className="text-primary" />
+                <span className="text-[11px] font-semibold">语义锚点</span>
+              </div>
+              <div className="space-y-2">
+                {cognition.level2.slice(0, 4).map((item) => (
+                  <div key={item.anchor} className="text-[12px] leading-5 text-on-surface-variant">
+                    <span className="font-medium text-primary">{item.anchor}</span>
+                    <span>：{item.summary}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={onToggleDeep}
+              className="flex h-8 items-center gap-1.5 rounded-full px-3 text-[12px] font-semibold text-primary transition-all hover:bg-primary-fixed/35"
+            >
+              <Eye size={12} />
+              {deep ? '收起溯源层' : '深入探查 Level 3'}
+            </button>
+
+            {deep && (
+              <div className="rounded-[20px] bg-surface-container/50 p-3 ring-1 ring-white/45">
+                <div className="mb-2 text-[11px] font-semibold text-on-surface">高频气泡与溯源支持</div>
+                <div className="space-y-2">
+                  {weightedBubbles.slice(0, 4).map((bubble) => {
+                    const deepLayer = cognition.level3.find((item) => item.bubbleId === bubble.id)
+                    return (
+                      <div key={bubble.id} className="border-t border-outline-variant/20 pt-2 first:border-t-0 first:pt-0">
+                        <div className="mb-1 flex items-center gap-2 text-[10px] text-outline">
+                          <span>权重 {bubble.interactionWeight || 0}</span>
+                          {bubble.tag && <span>{bubble.tag}</span>}
+                        </div>
+                        <div className="text-[12px] leading-5 text-on-surface">{bubble.content}</div>
+                        {deepLayer?.deepLogic && (
+                          <div className="mt-1 text-[11px] leading-5 text-on-surface-variant">{deepLayer.deepLogic}</div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
-    <div className={`glass-panel ${compact ? 'p-3' : 'p-4'} hover:shadow-glass-hover transition-all group`}>
+    <div className="glass-panel p-4 hover:shadow-glass-hover transition-all group">
       <div className="flex items-start justify-between gap-4">
         <button onClick={onToggleExpand} className="flex-1 text-left">
           <div className="flex items-center gap-2 flex-wrap">

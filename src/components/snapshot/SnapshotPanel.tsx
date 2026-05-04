@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Brain, Camera, Check, Loader2, Plus, Sparkles, X } from 'lucide-react'
 import SnapshotCard from '@/components/snapshot/SnapshotCard'
 import { requestSnapshotCognition } from '@/lib/snapshotCognition'
@@ -9,6 +9,7 @@ interface SnapshotPanelProps {
   onClose?: () => void
   embedded?: boolean
   contained?: boolean
+  selectedBubbleIds?: string[]
 }
 
 function formatTime(iso: string) {
@@ -21,7 +22,7 @@ function formatTime(iso: string) {
   })
 }
 
-export default function SnapshotPanel({ onClose, embedded = false, contained = false }: SnapshotPanelProps) {
+export default function SnapshotPanel({ onClose, embedded = false, contained = false, selectedBubbleIds = [] }: SnapshotPanelProps) {
   const { bubbles, categories, viewport, extensions, relations, filterTag } = useBubbleStore()
   const { snapshots, createSnapshot, restoreSnapshot, deleteSnapshot } = useSnapshotStore()
   const [snapshotName, setSnapshotName] = useState('')
@@ -29,7 +30,7 @@ export default function SnapshotPanel({ onClose, embedded = false, contained = f
   const [isArchitecting, setIsArchitecting] = useState(false)
   const [expandedSnapshotId, setExpandedSnapshotId] = useState<string | null>(null)
   const [deepSnapshotId, setDeepSnapshotId] = useState<string | null>(null)
-  const [selectedBubbleIds, setSelectedBubbleIds] = useState<Set<string>>(() => new Set())
+  const [includedBubbleIds, setIncludedBubbleIds] = useState<Set<string>>(() => new Set())
 
   const visibleBubbles = useMemo(() => {
     if (filterTag === '__untagged__') return bubbles.filter((bubble) => !bubble.tag)
@@ -37,19 +38,31 @@ export default function SnapshotPanel({ onClose, embedded = false, contained = f
     return bubbles
   }, [bubbles, filterTag])
 
-  const selectedBubbles = visibleBubbles.filter((bubble) => selectedBubbleIds.has(bubble.id))
+  const selectedBubbles = visibleBubbles.filter((bubble) => includedBubbleIds.has(bubble.id))
   const recentSnapshots = embedded ? snapshots.slice(0, 4) : snapshots
+  const selectedBubbleIdsSignature = selectedBubbleIds.join('|')
+
+  useEffect(() => {
+    if (selectedBubbleIds.length === 0) return
+
+    const visibleIds = new Set(visibleBubbles.map((bubble) => bubble.id))
+    const nextIncluded = selectedBubbleIds.filter((id) => visibleIds.has(id))
+    if (nextIncluded.length === 0) return
+
+    setIncludedBubbleIds(new Set(nextIncluded))
+    setIsCreating(true)
+  }, [selectedBubbleIds, selectedBubbleIdsSignature, visibleBubbles])
 
   const openCreator = () => {
     const nextOpen = !isCreating
     setIsCreating(nextOpen)
-    if (nextOpen && selectedBubbleIds.size === 0) {
-      setSelectedBubbleIds(new Set(visibleBubbles.map((bubble) => bubble.id)))
+    if (nextOpen && includedBubbleIds.size === 0) {
+      setIncludedBubbleIds(new Set(selectedBubbleIds.length > 0 ? selectedBubbleIds : visibleBubbles.map((bubble) => bubble.id)))
     }
   }
 
   const toggleBubble = (id: string) => {
-    setSelectedBubbleIds((prev) => {
+    setIncludedBubbleIds((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
@@ -58,7 +71,7 @@ export default function SnapshotPanel({ onClose, embedded = false, contained = f
   }
 
   const toggleAll = () => {
-    setSelectedBubbleIds((prev) => (
+    setIncludedBubbleIds((prev) => (
       prev.size === visibleBubbles.length ? new Set() : new Set(visibleBubbles.map((bubble) => bubble.id))
     ))
   }
@@ -133,7 +146,7 @@ export default function SnapshotPanel({ onClose, embedded = false, contained = f
       </div>
 
       {isCreating && (
-        <div className="rounded-xl bg-white/35 border border-outline-variant/20 p-3 space-y-3 animate-bubble-in">
+        <div className="rounded-[26px] bg-white/35 border border-outline-variant/20 p-3 space-y-3 animate-bubble-in">
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -141,12 +154,12 @@ export default function SnapshotPanel({ onClose, embedded = false, contained = f
               onChange={(e) => setSnapshotName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreateSnapshot()}
               placeholder="快照名称..."
-              className="flex-1 input-field text-[13px] !py-2"
+              className="min-w-0 flex-1 input-field text-[13px] !py-2.5"
             />
             <button
               onClick={handleCreateSnapshot}
               disabled={isArchitecting || selectedBubbles.length === 0}
-              className="btn-liquid text-[13px] flex items-center gap-1 !px-3 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="btn-liquid flex h-11 w-[76px] shrink-0 items-center justify-center gap-1 !px-0 !py-0 text-[13px] whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isArchitecting ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
               保存
@@ -158,7 +171,7 @@ export default function SnapshotPanel({ onClose, embedded = false, contained = f
               纳入快照的气泡
             </span>
             <button onClick={toggleAll} className="text-[11px] text-primary font-semibold">
-              {selectedBubbleIds.size === visibleBubbles.length ? '清空' : '全选'}
+              {includedBubbleIds.size === visibleBubbles.length ? '清空' : '全选'}
             </button>
           </div>
 
@@ -171,15 +184,15 @@ export default function SnapshotPanel({ onClose, embedded = false, contained = f
                   key={bubble.id}
                   onClick={() => toggleBubble(bubble.id)}
                   className={`w-full text-left px-2.5 py-2 rounded-xl flex items-start gap-2 transition-all ${
-                    selectedBubbleIds.has(bubble.id)
+                    includedBubbleIds.has(bubble.id)
                       ? 'bg-primary-container/20 text-primary'
                       : 'hover:bg-surface-container/60 text-on-surface-variant'
                   }`}
                 >
                   <div className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${
-                    selectedBubbleIds.has(bubble.id) ? 'border-primary bg-primary/15' : 'border-outline-variant'
+                    includedBubbleIds.has(bubble.id) ? 'border-primary bg-primary/15' : 'border-outline-variant'
                   }`}>
-                    {selectedBubbleIds.has(bubble.id) && <Check size={10} />}
+                    {includedBubbleIds.has(bubble.id) && <Check size={10} />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="text-[12px] truncate">{bubble.content}</div>

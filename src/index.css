@@ -84,6 +84,40 @@
       0 2px 10px rgba(60, 45, 41, 0.04);
   }
 
+  .dock-expand-panel {
+    transform-origin: bottom center;
+    animation: dock-panel-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .dock-suggestion-card {
+    transform-origin: top center;
+    animation: dock-card-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes dock-panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.985);
+      max-height: 0;
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      max-height: min(560px, calc(100vh - 220px));
+    }
+  }
+
+  @keyframes dock-card-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .glass-panel-tertiary {
     background-color: rgba(228, 223, 255, 0.22);
     backdrop-filter: saturate(180%) blur(32px);
@@ -249,5 +283,14 @@
       radial-gradient(circle at 80% 70%, rgba(226, 229, 255, 0.30) 0%, transparent 50%),
       radial-gradient(rgba(142, 112, 106, 0.13) 1px, transparent 1px);
     background-size: 100% 100%, 100% 100%, 14px 14px;
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }

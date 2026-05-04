@@ -21,6 +21,12 @@ export interface FollowUpOption {
   id: string
   text: string
   detail: string
+  action?: 'append' | 'rewrite' | 'merge'
+  targetBubbleId?: string
+  targetBubbleIds?: string[]
+  sourceBubbleIds?: string[]
+  deleteBubbleIds?: string[]
+  newContent?: string
 }
 
 export interface FollowUpResult {
@@ -42,11 +48,16 @@ interface AiState {
   chatStream: string
   followUpResult: FollowUpResult | null
   activeFollowUpBubbleId: string | null
+  activeFollowUpBubbleIds: string[]
 
   categorize: (bubbles: Array<{ id: string; content: string; tag?: string }>, existingTags?: string[]) => Promise<CategorizeResult | null>
   generatePrd: (bubbles: PrdBubbleInput[], template?: string, onChunk?: (content: string) => void) => Promise<string>
   sendChat: (messages: Array<{ role: string; content: string }>, onChunk?: (content: string) => void) => Promise<string>
-  followUp: (bubbleContent: string, existingBubbles: string[]) => Promise<FollowUpResult | null>
+  followUp: (
+    bubbleContent: string,
+    existingBubbles: string[],
+    options?: { mode?: 'single' | 'relationship'; targetBubbleIds?: string[] },
+  ) => Promise<FollowUpResult | null>
   clearError: () => void
   clearCategorizeResult: () => void
   clearFollowUp: () => void
@@ -59,6 +70,7 @@ export const useAiStore = create<AiState>((set) => ({
   chatStream: '',
   followUpResult: null,
   activeFollowUpBubbleId: null,
+  activeFollowUpBubbleIds: [],
 
   categorize: async (bubbles, existingTags = []) => {
     set({ isLoading: true, error: null })
@@ -197,15 +209,15 @@ export const useAiStore = create<AiState>((set) => ({
 
   clearError: () => set({ error: null }),
   clearCategorizeResult: () => set({ categorizeResult: null }),
-  clearFollowUp: () => set({ followUpResult: null, activeFollowUpBubbleId: null }),
+  clearFollowUp: () => set({ followUpResult: null, activeFollowUpBubbleId: null, activeFollowUpBubbleIds: [] }),
 
-  followUp: async (bubbleContent, existingBubbles) => {
+  followUp: async (bubbleContent, existingBubbles, options) => {
     set({ isLoading: true, error: null, followUpResult: null })
     try {
       const response = await fetch('/api/ai/followup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bubbleContent, existingBubbles }),
+        body: JSON.stringify({ bubbleContent, existingBubbles, ...options }),
       })
 
       if (!response.ok) {
@@ -221,31 +233,49 @@ export const useAiStore = create<AiState>((set) => ({
       set({ followUpResult: result, isLoading: false })
       return result
     } catch (error: unknown) {
-      const fallback: FollowUpResult = {
-        question: '这条灵感还可以从哪个方向补一笔？',
-        options: [
-          {
-            id: '1',
-            text: '补充目标用户',
-            detail: '说明这个想法主要服务谁，以及他们遇到的真实场景。',
-          },
-          {
-            id: '2',
-            text: '补充使用场景',
-            detail: '描述它会在什么时候被触发，以及前后发生了什么。',
-          },
-          {
-            id: '3',
-            text: '补充判断标准',
-            detail: '写下怎样才算这个想法被验证或实现得足够好。',
-          },
-          {
-            id: '4',
-            text: '就这样吧',
-            detail: '保持当前内容不变',
-          },
-        ],
-      }
+      const fallback: FollowUpResult = options?.mode === 'relationship'
+        ? {
+          question: '这组气泡需要先澄清彼此关系：哪些是重复表达，哪些是约束冲突，哪些可以合并成同一条产品判断。',
+          options: [
+            {
+              id: '1',
+              text: '补充关系判断',
+              detail: '记录这组气泡之间的冲突、依赖或合并方向，后续再决定是否改写具体气泡。',
+              action: 'append',
+              targetBubbleIds: options.targetBubbleIds || [],
+            },
+            {
+              id: '2',
+              text: '就这样吧',
+              detail: '保持当前内容不变',
+            },
+          ],
+        }
+        : {
+          question: '这条灵感还可以从哪个方向补一笔？',
+          options: [
+            {
+              id: '1',
+              text: '补充目标用户',
+              detail: '说明这个想法主要服务谁，以及他们遇到的真实场景。',
+            },
+            {
+              id: '2',
+              text: '补充使用场景',
+              detail: '描述它会在什么时候被触发，以及前后发生了什么。',
+            },
+            {
+              id: '3',
+              text: '补充判断标准',
+              detail: '写下怎样才算这个想法被验证或实现得足够好。',
+            },
+            {
+              id: '4',
+              text: '就这样吧',
+              detail: '保持当前内容不变',
+            },
+          ],
+        }
       set({ error: (error as Error).message, followUpResult: fallback, isLoading: false })
       return fallback
     }

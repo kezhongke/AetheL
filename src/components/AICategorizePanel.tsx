@@ -96,7 +96,7 @@ export default function AICategorizePanel({ onClose }: AICategorizePanelProps) {
           {!categorizeResult ? (
             <div className="p-5 space-y-5">
               <div className="text-[14px] text-on-surface-variant leading-relaxed">
-                AI 将分析所有气泡内容，自动归类分组、推荐标签、检测关联与矛盾。
+                AI 将分析所有气泡内容，自动归类分组、推荐标签、检测关联与矛盾；接受后会同步整理画布位置，让同类气泡自然聚拢。
               </div>
 
               <button
@@ -212,7 +212,7 @@ export default function AICategorizePanel({ onClose }: AICategorizePanelProps) {
               <div className="flex gap-2">
                 <button onClick={handleAccept} className="flex-1 btn-liquid text-[13px] flex items-center justify-center gap-1">
                   <Check size={12} />
-                  接受
+                  接受并整理画布
                 </button>
                 <button onClick={clearCategorizeResult} className="flex-1 btn-ghost text-[13px] flex items-center justify-center gap-1">
                   <X size={12} />

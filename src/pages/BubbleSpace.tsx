@@ -1,24 +1,22 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Brain, History, Tags } from 'lucide-react'
 import BubbleCanvas from '@/components/BubbleCanvas'
 import TagSidebar from '@/components/TagSidebar'
 import AICategorizePanel from '@/components/AICategorizePanel'
 import BubbleDetail from '@/components/BubbleDetail'
-import FollowUpDialog from '@/components/FollowUpDialog'
 import SnapshotPanel from '@/components/snapshot/SnapshotPanel'
 import BubbleAIAssistant from '@/components/BubbleAIAssistant'
 import { useBubbleStore } from '@/stores/bubbleStore'
-import { useAiStore } from '@/stores/aiStore'
 import { useSnapshotStore } from '@/stores/snapshotStore'
 
 export default function BubbleSpace() {
   const [activePanel, setActivePanel] = useState<'tags' | 'ai' | 'snapshot' | null>(null)
+  const [snapshotSelectionIds, setSnapshotSelectionIds] = useState<string[]>([])
   const selectedBubbleId = useBubbleStore((s) => s.selectedBubbleId)
+  const selectBubble = useBubbleStore((s) => s.selectBubble)
+  const canvasMode = useBubbleStore((s) => s.canvasMode)
   const categoryColorSignature = useBubbleStore((s) => s.categories.map((category) => `${category.id}:${category.color}`).join('|'))
   const ensureDistinctCategoryColors = useBubbleStore((s) => s.ensureDistinctCategoryColors)
-  const isFollowUpLoading = useAiStore((s) => s.isLoading)
-  const followUpResult = useAiStore((s) => s.followUpResult)
-  const activeFollowUpBubbleId = useAiStore((s) => s.activeFollowUpBubbleId)
   const latestSnapshot = useSnapshotStore((s) => s.snapshots[0])
 
   const panelButtons = [
@@ -31,6 +29,28 @@ export default function BubbleSpace() {
     ensureDistinctCategoryColors()
   }, [categoryColorSignature, ensureDistinctCategoryColors])
 
+  const handleCanvasSelectionChange = useCallback((ids: string[]) => {
+    setSnapshotSelectionIds(ids)
+    if (ids.length > 0 && canvasMode === 'select') {
+      setActivePanel('snapshot')
+    }
+  }, [canvasMode])
+
+  const handleRemoveSelectedBubble = useCallback((id: string) => {
+    setSnapshotSelectionIds((ids) => {
+      const nextIds = ids.filter((selectedId) => selectedId !== id)
+      if (selectedBubbleId === id) {
+        selectBubble(nextIds[0] || null)
+      }
+      return nextIds
+    })
+  }, [selectBubble, selectedBubbleId])
+
+  const handleClearSelectedBubbles = useCallback(() => {
+    setSnapshotSelectionIds([])
+    selectBubble(null)
+  }, [selectBubble])
+
   return (
     <div className="h-screen flex flex-col bg-background dot-grid-bg relative overflow-hidden">
       <div className="blob-bg w-[520px] h-[520px] bg-primary-fixed/55 top-[-180px] left-[12%] animate-blob-drift" />
@@ -39,7 +59,10 @@ export default function BubbleSpace() {
 
       <div className="relative z-10 h-full">
         <div className="absolute inset-0 overflow-hidden">
-          <BubbleCanvas />
+          <BubbleCanvas
+            selectedBubbleIds={snapshotSelectionIds}
+            onSelectionChange={handleCanvasSelectionChange}
+          />
 
           <div className="absolute right-6 top-5 z-30 glass-panel floating-window !rounded-full flex items-center gap-0.5 p-1">
             {panelButtons.map(({ id, icon: Icon, label }) => (
@@ -69,13 +92,21 @@ export default function BubbleSpace() {
               {activePanel === 'tags' && <TagSidebar onClose={() => setActivePanel(null)} />}
               {activePanel === 'ai' && <AICategorizePanel onClose={() => setActivePanel(null)} />}
               {activePanel === 'snapshot' && (
-                <SnapshotPanel embedded contained onClose={() => setActivePanel(null)} />
+                <SnapshotPanel
+                  embedded
+                  contained
+                  selectedBubbleIds={snapshotSelectionIds}
+                  onClose={() => setActivePanel(null)}
+                />
               )}
             </div>
           )}
           {selectedBubbleId && <BubbleDetail />}
-          <BubbleAIAssistant />
-          {activeFollowUpBubbleId && (followUpResult || isFollowUpLoading) && <FollowUpDialog />}
+          <BubbleAIAssistant
+            selectedBubbleIds={snapshotSelectionIds}
+            onRemoveSelectedBubble={handleRemoveSelectedBubble}
+            onClearSelectedBubbles={handleClearSelectedBubbles}
+          />
         </div>
       </div>
     </div>

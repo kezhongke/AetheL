@@ -1,9 +1,16 @@
 import { useRef, useEffect, useCallback, useState } from 'react'
 import { HelpCircle, Maximize2, MousePointer2, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react'
 import { useBubbleStore } from '@/stores/bubbleStore'
-import type { Bubble } from '@/stores/bubbleStore'
+import type { Bubble, BubbleRelation } from '@/stores/bubbleStore'
 
 const DEFAULT_BUBBLE_COLOR = '#94a3b8'
+const EMPTY_SELECTED_BUBBLE_IDS: string[] = []
+const CONTRADICTION_MARKER_RADIUS = 13
+
+interface BubbleCanvasProps {
+  selectedBubbleIds?: string[]
+  onSelectionChange?: (ids: string[]) => void
+}
 
 function hexToRgba(hex: string | undefined, alpha: number) {
   const normalized = (hex || DEFAULT_BUBBLE_COLOR).replace('#', '')
@@ -18,7 +25,7 @@ function hexToRgba(hex: string | undefined, alpha: number) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
-export default function BubbleCanvas() {
+export default function BubbleCanvas({ selectedBubbleIds = EMPTY_SELECTED_BUBBLE_IDS, onSelectionChange }: BubbleCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const {
@@ -44,6 +51,21 @@ export default function BubbleCanvas() {
   const [selectionBox, setSelectionBox] = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const animRef = useRef<number>(0)
+  const selectedBubbleIdsSignature = selectedBubbleIds.join('|')
+
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      const next = new Set(selectedBubbleIds)
+      if (prev.size === next.size && [...prev].every((id) => next.has(id))) {
+        return prev
+      }
+      return next
+    })
+  }, [selectedBubbleIdsSignature, selectedBubbleIds])
+
+  useEffect(() => {
+    onSelectionChange?.([...selectedIds])
+  }, [onSelectionChange, selectedIds])
 
   const filteredBubbles = filterTag === '__untagged__'
     ? bubbles.filter((b) => !b.tag)
@@ -120,15 +142,43 @@ export default function BubbleCanvas() {
 
       const sp = worldToScreen(source.x, source.y)
       const tp = worldToScreen(target.x, target.y)
+      const isContradictory = rel.type === 'contradictory'
 
+      ctx.save()
       ctx.beginPath()
-      ctx.setLineDash([6, 4])
-      ctx.strokeStyle = rel.type === 'contradictory' ? 'rgba(186, 26, 26, 0.42)' : rel.type === 'duplicate' ? 'rgba(92, 89, 119, 0.4)' : 'rgba(79, 91, 213, 0.32)'
-      ctx.lineWidth = 2
+      ctx.setLineDash(isContradictory ? [10, 5] : [6, 4])
+      ctx.strokeStyle = isContradictory ? 'rgba(236, 34, 20, 0.88)' : rel.type === 'duplicate' ? 'rgba(92, 89, 119, 0.4)' : 'rgba(79, 91, 213, 0.32)'
+      ctx.lineWidth = isContradictory ? 3.4 : 2
+      if (isContradictory) {
+        ctx.shadowColor = 'rgba(236, 34, 20, 0.35)'
+        ctx.shadowBlur = 12
+      }
       ctx.moveTo(sp.x, sp.y)
       ctx.lineTo(tp.x, tp.y)
       ctx.stroke()
       ctx.setLineDash([])
+      ctx.restore()
+
+      if (isContradictory) {
+        const markerX = (sp.x + tp.x) / 2
+        const markerY = (sp.y + tp.y) / 2
+
+        ctx.save()
+        ctx.beginPath()
+        ctx.arc(markerX, markerY, CONTRADICTION_MARKER_RADIUS, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.92)'
+        ctx.fill()
+        ctx.strokeStyle = 'rgba(236, 34, 20, 0.48)'
+        ctx.lineWidth = 1.4
+        ctx.stroke()
+
+        ctx.font = '900 17px "Inter", "Noto Sans SC", sans-serif'
+        ctx.fillStyle = '#e02617'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText('!', markerX, markerY + 0.5)
+        ctx.restore()
+      }
     })
 
     // 绘制气泡
@@ -356,16 +406,82 @@ export default function BubbleCanvas() {
     [filteredBubbles, screenToWorld]
   )
 
+  const findContradictionMarkerAt = useCallback(
+    (sx: number, sy: number): BubbleRelation | null => {
+      for (let i = filteredRelations.length - 1; i >= 0; i--) {
+        const relation = filteredRelations[i]
+        if (relation.type !== 'contradictory') continue
+
+        const source = filteredBubbles.find((bubble) => bubble.id === relation.sourceId)
+        const target = filteredBubbles.find((bubble) => bubble.id === relation.targetId)
+        if (!source || !target) continue
+
+        const sourcePosition = worldToScreen(source.x, source.y)
+        const targetPosition = worldToScreen(target.x, target.y)
+        const markerX = (sourcePosition.x + targetPosition.x) / 2
+        const markerY = (sourcePosition.y + targetPosition.y) / 2
+
+        if (Math.hypot(sx - markerX, sy - markerY) <= CONTRADICTION_MARKER_RADIUS + 5) {
+          return relation
+        }
+      }
+      return null
+    },
+    [filteredBubbles, filteredRelations, worldToScreen],
+  )
+
+  const selectSingleBubbleContext = useCallback((id: string) => {
+    selectBubble(id)
+    setSelectedIds(new Set([id]))
+  }, [selectBubble])
+
+  const clearBubbleContext = useCallback(() => {
+    selectBubble(null)
+    setSelectedIds(new Set())
+  }, [selectBubble])
+
+  const focusRelationPair = useCallback((sourceId: string, targetId: string) => {
+    const source = filteredBubbles.find((bubble) => bubble.id === sourceId)
+    const target = filteredBubbles.find((bubble) => bubble.id === targetId)
+    if (!source || !target) return
+
+    const pair = new Set([sourceId, targetId])
+    const minX = Math.min(source.x, target.x)
+    const maxX = Math.max(source.x, target.x)
+    const minY = Math.min(source.y, target.y)
+    const maxY = Math.max(source.y, target.y)
+    const width = Math.max(maxX - minX, 180)
+    const height = Math.max(maxY - minY, 120)
+    const zoom = Math.min(2.4, Math.max(0.45, Math.min(
+      canvasSize.w / (width + 360),
+      canvasSize.h / (height + 260),
+    )))
+
+    setSelectedIds(pair)
+    selectBubble(sourceId)
+    setViewport({
+      x: (minX + maxX) / 2,
+      y: (minY + maxY) / 2,
+      zoom,
+    })
+  }, [canvasSize, filteredBubbles, selectBubble, setViewport])
+
   const handleMouseDown = (e: React.MouseEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect()
     if (!rect) return
     const sx = e.clientX - rect.left
     const sy = e.clientY - rect.top
 
+    const contradictionMarker = findContradictionMarkerAt(sx, sy)
+    if (contradictionMarker) {
+      focusRelationPair(contradictionMarker.sourceId, contradictionMarker.targetId)
+      return
+    }
+
     const bubbleUnderPointer = findBubbleAt(sx, sy)
 
     if (canvasMode === 'pan' && bubbleUnderPointer) {
-      selectBubble(bubbleUnderPointer.id)
+      selectSingleBubbleContext(bubbleUnderPointer.id)
       return
     }
 
@@ -378,10 +494,10 @@ export default function BubbleCanvas() {
     if (canvasMode === 'edit') {
       const bubble = bubbleUnderPointer
       if (bubble) {
-        selectBubble(bubble.id)
+        selectSingleBubbleContext(bubble.id)
         setDragging(bubble.id)
       } else {
-        selectBubble(null)
+        clearBubbleContext()
       }
       return
     }
@@ -389,12 +505,18 @@ export default function BubbleCanvas() {
     if (canvasMode === 'select') {
       const bubble = bubbleUnderPointer
       if (bubble) {
-        setSelectedIds((prev) => {
-          const next = new Set(prev)
-          if (next.has(bubble.id)) next.delete(bubble.id)
-          else next.add(bubble.id)
-          return next
-        })
+        const next = new Set(selectedIds)
+        if (next.has(bubble.id)) {
+          next.delete(bubble.id)
+          if (selectedBubbleId === bubble.id) {
+            const nextActiveId = next.values().next().value as string | undefined
+            selectBubble(nextActiveId || null)
+          }
+        } else {
+          next.add(bubble.id)
+          selectBubble(bubble.id)
+        }
+        setSelectedIds(next)
       } else {
         setSelectionBox({ startX: sx, startY: sy, endX: sx, endY: sy })
       }
@@ -444,6 +566,10 @@ export default function BubbleCanvas() {
           }
         })
         setSelectedIds(newSelected)
+        if (newSelected.size > 0 && (!selectedBubbleId || !newSelected.has(selectedBubbleId))) {
+          const nextActiveId = newSelected.values().next().value as string | undefined
+          if (nextActiveId) selectBubble(nextActiveId)
+        }
       }
       setSelectionBox(null)
     }
