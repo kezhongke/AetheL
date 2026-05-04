@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Brain, History, Tags } from 'lucide-react'
 import BubbleCanvas from '@/components/BubbleCanvas'
 import TagSidebar from '@/components/TagSidebar'
@@ -14,6 +14,8 @@ import { useSnapshotStore } from '@/stores/snapshotStore'
 export default function BubbleSpace() {
   const [activePanel, setActivePanel] = useState<'tags' | 'ai' | 'snapshot' | null>(null)
   const selectedBubbleId = useBubbleStore((s) => s.selectedBubbleId)
+  const categoryColorSignature = useBubbleStore((s) => s.categories.map((category) => `${category.id}:${category.color}`).join('|'))
+  const ensureDistinctCategoryColors = useBubbleStore((s) => s.ensureDistinctCategoryColors)
   const isFollowUpLoading = useAiStore((s) => s.isLoading)
   const followUpResult = useAiStore((s) => s.followUpResult)
   const activeFollowUpBubbleId = useAiStore((s) => s.activeFollowUpBubbleId)
@@ -25,6 +27,10 @@ export default function BubbleSpace() {
     { id: 'snapshot' as const, icon: History, label: '快照' },
   ]
 
+  useEffect(() => {
+    ensureDistinctCategoryColors()
+  }, [categoryColorSignature, ensureDistinctCategoryColors])
+
   return (
     <div className="h-screen flex flex-col bg-background dot-grid-bg relative overflow-hidden">
       <div className="blob-bg w-[520px] h-[520px] bg-primary-fixed/55 top-[-180px] left-[12%] animate-blob-drift" />
@@ -35,22 +41,22 @@ export default function BubbleSpace() {
         <div className="absolute inset-0 overflow-hidden">
           <BubbleCanvas />
 
-          <div className="absolute right-6 top-6 z-30 glass-panel floating-window !rounded-full flex items-center gap-1 p-1.5">
+          <div className="absolute right-6 top-5 z-30 glass-panel floating-window !rounded-full flex items-center gap-0.5 p-1">
             {panelButtons.map(({ id, icon: Icon, label }) => (
               <button
                 key={id}
                 onClick={() => setActivePanel(activePanel === id ? null : id)}
-                className={`h-9 px-3 rounded-full flex items-center gap-2 transition-all ${
+                className={`h-8 px-2.5 rounded-full flex items-center gap-1.5 transition-all ${
                   activePanel === id
                     ? 'bg-primary text-on-primary shadow-glow-primary'
                     : 'text-on-surface hover:text-primary hover:bg-primary-fixed/35'
                 }`}
                 title={label}
               >
-                <Icon size={15} />
-                <span className="text-[12px] font-semibold">{label}</span>
+                <Icon size={14} />
+                <span className="text-[11px] font-semibold">{label}</span>
                 {id === 'snapshot' && latestSnapshot && (
-                  <span className={`max-w-20 truncate text-[10px] ${activePanel === id ? 'text-on-primary/80' : 'text-outline'}`}>
+                  <span className={`max-w-16 truncate text-[9px] ${activePanel === id ? 'text-on-primary/80' : 'text-outline'}`}>
                     {latestSnapshot.name}
                   </span>
                 )}
@@ -59,7 +65,7 @@ export default function BubbleSpace() {
           </div>
 
           {activePanel && (
-            <div className="absolute right-6 top-24 bottom-56 z-40 w-[380px] max-w-[calc(100%-3rem)]">
+            <div className="absolute right-6 top-20 bottom-44 z-40 w-[340px] max-w-[calc(100%-3rem)]">
               {activePanel === 'tags' && <TagSidebar onClose={() => setActivePanel(null)} />}
               {activePanel === 'ai' && <AICategorizePanel onClose={() => setActivePanel(null)} />}
               {activePanel === 'snapshot' && (

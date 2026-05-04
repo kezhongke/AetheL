@@ -2,6 +2,21 @@ import { useRef, useEffect, useCallback, useState } from 'react'
 import { useBubbleStore } from '@/stores/bubbleStore'
 import type { Bubble } from '@/stores/bubbleStore'
 
+const DEFAULT_BUBBLE_COLOR = '#94a3b8'
+
+function hexToRgba(hex: string | undefined, alpha: number) {
+  const normalized = (hex || DEFAULT_BUBBLE_COLOR).replace('#', '')
+  const value = normalized.length === 3
+    ? normalized.split('').map((char) => char + char).join('')
+    : normalized
+  const safeValue = /^[0-9a-fA-F]{6}$/.test(value) ? value : DEFAULT_BUBBLE_COLOR.replace('#', '')
+  const r = parseInt(safeValue.slice(0, 2), 16)
+  const g = parseInt(safeValue.slice(2, 4), 16)
+  const b = parseInt(safeValue.slice(4, 6), 16)
+
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
 export default function BubbleCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -124,6 +139,7 @@ export default function BubbleCanvas() {
       const isDragging = bubble.id === dragging
       const isInSelection = selectedIds.has(bubble.id)
       const bubbleExts = extensions.filter((e) => e.bubbleId === bubble.id)
+      const bubbleColor = bubble.color || DEFAULT_BUBBLE_COLOR
 
       ctx.save()
       ctx.translate(pos.x, pos.y)
@@ -167,8 +183,8 @@ export default function BubbleCanvas() {
       const radius = 16 * viewport.zoom
 
       if (isSelected || isDragging || isInSelection) {
-        ctx.shadowColor = 'rgba(176, 46, 16, 0.22)'
-        ctx.shadowBlur = 25
+        ctx.shadowColor = hexToRgba(bubbleColor, 0.18)
+        ctx.shadowBlur = 22
       }
 
       // 兼容性更好的圆角矩形绘制
@@ -186,18 +202,40 @@ export default function BubbleCanvas() {
       ctx.quadraticCurveTo(x, y, x + radius, y)
       ctx.closePath()
 
-      const gradient = ctx.createLinearGradient(-bubbleWidth / 2, 0, bubbleWidth / 2, 0)
-      gradient.addColorStop(0, 'rgba(255, 255, 255, 0.94)')
-      gradient.addColorStop(1, 'rgba(255, 240, 237, 0.9)')
+      const gradient = ctx.createLinearGradient(-bubbleWidth / 2, -bubbleHeight / 2, bubbleWidth / 2, bubbleHeight / 2)
+      gradient.addColorStop(0, 'rgba(255, 255, 255, 0.96)')
+      gradient.addColorStop(1, 'rgba(255, 248, 246, 0.92)')
       ctx.fillStyle = gradient
       ctx.fill()
 
+      ctx.save()
+      ctx.clip()
+      const markerWidth = 24 * viewport.zoom
+      const markerHeight = 8 * viewport.zoom
+      const markerX = x + 13 * viewport.zoom
+      const markerY = y + 10 * viewport.zoom
+      const markerRadius = markerHeight / 2
+      ctx.beginPath()
+      ctx.moveTo(markerX + markerRadius, markerY)
+      ctx.lineTo(markerX + markerWidth - markerRadius, markerY)
+      ctx.quadraticCurveTo(markerX + markerWidth, markerY, markerX + markerWidth, markerY + markerRadius)
+      ctx.lineTo(markerX + markerWidth, markerY + markerHeight - markerRadius)
+      ctx.quadraticCurveTo(markerX + markerWidth, markerY + markerHeight, markerX + markerWidth - markerRadius, markerY + markerHeight)
+      ctx.lineTo(markerX + markerRadius, markerY + markerHeight)
+      ctx.quadraticCurveTo(markerX, markerY + markerHeight, markerX, markerY + markerHeight - markerRadius)
+      ctx.lineTo(markerX, markerY + markerRadius)
+      ctx.quadraticCurveTo(markerX, markerY, markerX + markerRadius, markerY)
+      ctx.closePath()
+      ctx.fillStyle = hexToRgba(bubbleColor, isSelected ? 0.64 : 0.46)
+      ctx.fill()
+      ctx.restore()
+
       if (isInSelection) {
-        ctx.strokeStyle = '#ad2c0d'
-        ctx.lineWidth = 3
+        ctx.strokeStyle = hexToRgba(bubbleColor, 0.78)
+        ctx.lineWidth = 2.4
       } else {
-        ctx.strokeStyle = isSelected ? '#ad2c0d' : 'rgba(62, 102, 89, 0.52)'
-        ctx.lineWidth = isSelected ? 3 : 1.5
+        ctx.strokeStyle = isSelected ? hexToRgba(bubbleColor, 0.82) : hexToRgba(bubbleColor, 0.34)
+        ctx.lineWidth = isSelected ? 2.4 : 1.4
       }
       ctx.stroke()
 
@@ -234,10 +272,13 @@ export default function BubbleCanvas() {
         ctx.quadraticCurveTo(tagX, tagY, tagX + tr, tagY)
         ctx.closePath()
         
-        ctx.fillStyle = 'rgba(192, 236, 220, 0.42)'
+        ctx.fillStyle = hexToRgba(bubbleColor, 0.14)
         ctx.fill()
+        ctx.strokeStyle = hexToRgba(bubbleColor, 0.32)
+        ctx.lineWidth = 1
+        ctx.stroke()
 
-        ctx.fillStyle = '#3e6659'
+        ctx.fillStyle = bubbleColor
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.fillText(bubble.tag, 0, tagY + tagHeight / 2)

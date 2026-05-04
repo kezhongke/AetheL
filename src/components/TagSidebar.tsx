@@ -3,8 +3,9 @@ import { CheckCircle2, Sparkles, Tag, Plus, X } from 'lucide-react'
 import { useBubbleStore } from '@/stores/bubbleStore'
 
 const TAG_COLORS = [
-  '#246a52', '#795900', '#ba1a1a', '#5e5e5b',
-  '#6f7973', '#3f4944', '#474744', '#00513b',
+  '#4f46e5', '#0891b2', '#7c3aed', '#e11d48',
+  '#d97706', '#0f766e', '#64748b', '#db2777',
+  '#2563eb', '#ea580c', '#65a30d', '#9333ea',
 ]
 
 interface TagSidebarProps {

@@ -4,8 +4,9 @@ import { useBubbleStore } from '@/stores/bubbleStore'
 import { useAiStore } from '@/stores/aiStore'
 
 const TAG_COLORS = [
-  '#246a52', '#795900', '#ba1a1a', '#5e5e5b',
-  '#6f7973', '#3f4944', '#474744', '#00513b',
+  '#4f46e5', '#0891b2', '#7c3aed', '#e11d48',
+  '#d97706', '#0f766e', '#64748b', '#db2777',
+  '#2563eb', '#ea580c', '#65a30d', '#9333ea',
 ]
 
 interface AICategorizePanelProps {
@@ -32,25 +33,27 @@ export default function AICategorizePanel({ onClose }: AICategorizePanelProps) {
     if (!categorizeResult) return
 
     setCategoriesFromAI(
-      categorizeResult.categories.map((cat) => ({
-        name: cat.name,
-        description: cat.description,
-        color: TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)],
-        confidence: cat.confidence,
-        bubbleIds: cat.bubbleIds,
-      }))
+      categorizeResult.categories.map((cat, index) => {
+        const suggestedTagColor = categorizeResult.suggestedTags.find((tag) => tag.name === cat.suggestedTag)?.color
+        return {
+          name: cat.name,
+          description: cat.description,
+          color: suggestedTagColor || TAG_COLORS[index % TAG_COLORS.length],
+          confidence: cat.confidence,
+          bubbleIds: cat.bubbleIds,
+          suggestedTag: cat.suggestedTag,
+        }
+      })
     )
 
-    if (categorizeResult.relations.length > 0) {
-      const newRelations = categorizeResult.relations.map((r) => ({
-        id: Date.now().toString(36) + Math.random().toString(36).substr(2, 9),
-        sourceId: r.sourceId,
-        targetId: r.targetId,
-        type: r.type,
-        reason: r.reason,
-      }))
-      setRelations(newRelations)
-    }
+    const newRelations = categorizeResult.relations.map((r) => ({
+      id: Date.now().toString(36) + Math.random().toString(36).substr(2, 9),
+      sourceId: r.sourceId,
+      targetId: r.targetId,
+      type: r.type,
+      reason: r.reason,
+    }))
+    setRelations(newRelations)
 
     clearCategorizeResult()
   }

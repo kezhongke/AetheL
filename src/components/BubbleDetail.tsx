@@ -3,8 +3,9 @@ import { useBubbleStore } from '@/stores/bubbleStore'
 import { useSnapshotStore } from '@/stores/snapshotStore'
 
 const TAG_COLORS = [
-  '#246a52', '#795900', '#ba1a1a', '#5e5e5b',
-  '#6f7973', '#3f4944', '#474744', '#00513b',
+  '#4f46e5', '#0891b2', '#7c3aed', '#e11d48',
+  '#d97706', '#0f766e', '#64748b', '#db2777',
+  '#2563eb', '#ea580c', '#65a30d', '#9333ea',
 ]
 
 export default function BubbleDetail() {
@@ -20,7 +21,7 @@ export default function BubbleDetail() {
   if (!bubble) return null
 
   return (
-    <div className="absolute top-24 bottom-56 left-6 z-40 w-[380px] max-w-[calc(100%-3rem)] glass-panel floating-window p-5 space-y-4 overflow-y-auto animate-bubble-in">
+    <div className="absolute top-20 bottom-44 left-6 z-40 w-[340px] max-w-[calc(100%-3rem)] glass-panel floating-window p-5 space-y-4 overflow-y-auto animate-bubble-in">
       <div className="flex items-center justify-between">
         <span className="text-[15px] text-on-surface font-semibold">气泡详情</span>
         <button onClick={() => selectBubble(null)} className="h-8 w-8 rounded-full flex items-center justify-center text-outline hover:bg-surface-container/70 hover:text-on-surface transition-colors">
@@ -81,14 +82,14 @@ export default function BubbleDetail() {
             <Activity size={11} className="text-primary" />
             交互权重
           </div>
-          <div className="text-lg font-serif text-primary mt-1">{bubble.interactionWeight || 0}</div>
+          <div className="text-lg font-semibold text-primary mt-1">{bubble.interactionWeight || 0}</div>
         </div>
         <div className="rounded-[20px] bg-white/45 border border-white/60 p-3">
           <div className="flex items-center gap-1.5 text-[12px] text-on-surface-variant font-semibold">
             <History size={11} className="text-primary" />
             参与快照
           </div>
-          <div className="text-lg font-serif text-primary mt-1">{snapshotCount}</div>
+          <div className="text-lg font-semibold text-primary mt-1">{snapshotCount}</div>
         </div>
       </div>
 

@@ -101,14 +101,6 @@ export default function BubbleAIAssistant() {
     <div className="absolute left-1/2 bottom-5 z-50 w-[min(760px,calc(100%-48px))] -translate-x-1/2">
       <div className="glass-panel p-3 shadow-2xl">
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white/70 ring-1 ring-white/70">
-            <img
-              src="/hermit-crab-mascot.png"
-              alt="Aethel mascot"
-              className="h-full w-full object-cover"
-            />
-          </div>
-
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
@@ -129,23 +121,25 @@ export default function BubbleAIAssistant() {
             </div>
 
             <div className="flex flex-col gap-2 md:flex-row">
-              <div className="flex shrink-0 rounded-full bg-white/50 p-1 ring-1 ring-outline-variant/30">
-                {availableModes.map(({ id, label, icon: Icon }) => (
-                  <button
-                    key={id}
-                    onClick={() => setMode(id)}
-                    className={`flex h-8 items-center gap-1.5 rounded-full px-3 text-[12px] font-semibold transition-all ${
-                      normalizedMode === id
-                        ? 'bg-primary text-on-primary shadow-glow-primary'
-                        : 'text-on-surface-variant hover:bg-white/70 hover:text-on-surface'
-                    }`}
-                    title={label}
-                  >
-                    <Icon size={13} />
-                    {label}
-                  </button>
-                ))}
-              </div>
+              {availableModes.length > 1 && (
+                <div className="flex shrink-0 rounded-full bg-white/50 p-1 ring-1 ring-outline-variant/30">
+                  {availableModes.map(({ id, label, icon: Icon }) => (
+                    <button
+                      key={id}
+                      onClick={() => setMode(id)}
+                      className={`flex h-8 items-center gap-1.5 rounded-full px-3 text-[12px] font-semibold transition-all ${
+                        normalizedMode === id
+                          ? 'bg-primary text-on-primary shadow-glow-primary'
+                          : 'text-on-surface-variant hover:bg-white/70 hover:text-on-surface'
+                      }`}
+                      title={label}
+                    >
+                      <Icon size={13} />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <div className="relative flex-1">
                 <input
@@ -161,7 +155,7 @@ export default function BubbleAIAssistant() {
                   onClick={handleSubmit}
                   disabled={!canSubmit || isLoading}
                   className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-on-primary transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40"
-                  title={activeMode.label}
+                  title={normalizedMode === 'add' ? '发送' : activeMode.label}
                 >
                   {isLoading && (normalizedMode === 'followup' || normalizedMode === 'add') ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
                 </button>

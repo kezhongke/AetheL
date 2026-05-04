@@ -102,7 +102,7 @@ export default function BubbleInput() {
           <img src="/hermit-crab-mascot.png" alt="Aethel mascot" className="h-full w-full object-cover" />
         </div>
         <div>
-          <div className="text-[15px] font-serif font-semibold text-on-surface">Aethel</div>
+          <div className="text-[15px] font-semibold text-on-surface">Aethel</div>
           <div className="text-[11px] text-on-surface-variant">产品构思工作台</div>
         </div>
       </div>

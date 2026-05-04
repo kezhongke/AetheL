@@ -92,49 +92,7 @@ export default function PrdOutput() {
       <div className="blob-bg w-[360px] h-[360px] bg-tertiary-fixed/35 top-[35%] right-[-80px] animate-blob-drift" style={{ animationDelay: '-13s' }} />
 
       <div className="relative z-10 h-full p-6">
-        <div className="absolute left-[540px] right-6 top-6 z-20 floating-window rounded-full px-5 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="h-10 w-10 rounded-full bg-primary-fixed/60 text-primary flex items-center justify-center shrink-0">
-              <FileText size={19} />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-lg font-serif text-on-surface">PRD 输出中心</h1>
-              <p className="text-[12px] text-on-surface-variant truncate">将产品构思气泡转化为结构化需求草稿</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <select
-              value={template}
-              onChange={(e) => setTemplate(e.target.value as 'standard' | 'lean' | 'detailed')}
-              className="input-field text-[13px] !py-2"
-            >
-              <option value="standard">标准模板</option>
-              <option value="lean">精简模板</option>
-              <option value="detailed">详细模板</option>
-            </select>
-
-            <button
-              onClick={handleExportMarkdown}
-              disabled={!generatedContent}
-              className="btn-glass text-[13px] flex items-center gap-1 disabled:opacity-40"
-            >
-              <Download size={12} />
-              Markdown
-            </button>
-
-            <button
-              onClick={handleExportPDF}
-              disabled={!generatedContent}
-              className="btn-glass text-[13px] flex items-center gap-1 disabled:opacity-40"
-            >
-              <Download size={12} />
-              PDF
-            </button>
-          </div>
-        </div>
-
-        <div className="absolute left-6 top-24 bottom-6 w-[340px] z-10">
+        <div className="absolute left-6 top-20 bottom-6 w-[340px] z-10">
           <section className="floating-window h-full rounded-[32px] flex flex-col overflow-hidden">
             <div className="px-5 py-4 border-b border-outline-variant/20">
               <div className="flex items-center justify-between">
@@ -212,18 +170,48 @@ export default function PrdOutput() {
           </section>
         </div>
 
-        <section className="absolute left-[370px] right-6 top-24 bottom-6 z-10 floating-window rounded-[32px] overflow-hidden flex flex-col">
-          <div className="px-6 py-4 border-b border-outline-variant/20 flex items-center justify-between">
-            <div>
-              <div className="text-[15px] font-semibold text-on-surface">PRD 预览</div>
-              <div className="text-[12px] text-outline">流式生成后可导出 Markdown 或 PDF</div>
+        <section className="absolute left-[370px] right-6 top-20 bottom-6 z-10 floating-window rounded-[32px] overflow-hidden flex flex-col">
+          <div className="px-6 py-4 border-b border-outline-variant/20 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <div className="text-[16px] font-semibold text-on-surface">PRD 输出中心</div>
+              <div className="text-[12px] text-outline truncate">将产品构思气泡转化为结构化需求草稿</div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <select
+                value={template}
+                onChange={(e) => setTemplate(e.target.value as 'standard' | 'lean' | 'detailed')}
+                className="input-field text-[13px] !py-2"
+              >
+                <option value="standard">标准模板</option>
+                <option value="lean">精简模板</option>
+                <option value="detailed">详细模板</option>
+              </select>
+
+              <button
+                onClick={handleExportMarkdown}
+                disabled={!generatedContent}
+                className="btn-glass text-[13px] flex items-center gap-1 disabled:opacity-40"
+              >
+                <Download size={12} />
+                Markdown
+              </button>
+
+              <button
+                onClick={handleExportPDF}
+                disabled={!generatedContent}
+                className="btn-glass text-[13px] flex items-center gap-1 disabled:opacity-40"
+              >
+                <Download size={12} />
+                PDF
+              </button>
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-6">
               {generatedContent ? (
                 <div ref={previewRef} className="rounded-[28px] bg-white/60 border border-white/70 p-8 prose prose-stone prose-sm max-w-none
-                  prose-headings:font-serif prose-headings:text-on-surface
+                  prose-headings:font-sans prose-headings:text-on-surface
                   prose-p:text-on-surface-variant prose-p:leading-relaxed
                   prose-strong:text-on-surface
                   prose-code:text-primary prose-code:bg-primary-container/20 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-mono prose-code:text-[12px]

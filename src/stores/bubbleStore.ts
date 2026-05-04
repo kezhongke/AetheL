@@ -39,14 +39,73 @@ export interface BubbleExtension {
 }
 
 const TAG_COLORS = [
-  '#246a52', '#795900', '#ba1a1a', '#5e5e5b',
-  '#6f7973', '#3f4944', '#474744', '#00513b',
+  '#4f46e5', '#0891b2', '#7c3aed', '#e11d48',
+  '#d97706', '#0f766e', '#64748b', '#db2777',
+  '#2563eb', '#ea580c', '#65a30d', '#9333ea',
 ]
 
 const BUBBLE_STORE_VERSION = 1
+const DEFAULT_BUBBLE_COLOR = '#94a3b8'
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 9)
+}
+
+function normalizeColor(color?: string) {
+  return color?.trim().toLowerCase() || ''
+}
+
+function componentToHex(value: number) {
+  return value.toString(16).padStart(2, '0')
+}
+
+function colorFromIndex(index: number) {
+  const hue = (index * 137.508) % 360
+  const saturation = 68 / 100
+  const lightness = 46 / 100
+  const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation
+  const x = chroma * (1 - Math.abs(((hue / 60) % 2) - 1))
+  const match = lightness - chroma / 2
+  let r = 0
+  let g = 0
+  let b = 0
+
+  if (hue < 60) [r, g, b] = [chroma, x, 0]
+  else if (hue < 120) [r, g, b] = [x, chroma, 0]
+  else if (hue < 180) [r, g, b] = [0, chroma, x]
+  else if (hue < 240) [r, g, b] = [0, x, chroma]
+  else if (hue < 300) [r, g, b] = [x, 0, chroma]
+  else [r, g, b] = [chroma, 0, x]
+
+  return `#${componentToHex(Math.round((r + match) * 255))}${componentToHex(Math.round((g + match) * 255))}${componentToHex(Math.round((b + match) * 255))}`
+}
+
+function pickDistinctCategoryColor(index: number, usedColors: Set<string>, preferredColor?: string) {
+  const candidates = [
+    preferredColor,
+    TAG_COLORS[index % TAG_COLORS.length],
+    ...TAG_COLORS,
+    colorFromIndex(index + TAG_COLORS.length),
+  ].filter(Boolean) as string[]
+
+  for (const color of candidates) {
+    const normalized = normalizeColor(color)
+    if (!usedColors.has(normalized)) {
+      usedColors.add(normalized)
+      return color
+    }
+  }
+
+  let offset = 1
+  while (true) {
+    const color = colorFromIndex(index + TAG_COLORS.length + offset)
+    const normalized = normalizeColor(color)
+    if (!usedColors.has(normalized)) {
+      usedColors.add(normalized)
+      return color
+    }
+    offset += 1
+  }
 }
 
 interface BubbleState {
@@ -82,7 +141,8 @@ interface BubbleState {
   removeRelation: (id: string) => void
   setRelations: (relations: BubbleRelation[]) => void
 
-  setCategoriesFromAI: (categories: Array<Omit<Category, 'id'> & { bubbleIds: string[] }>) => void
+  setCategoriesFromAI: (categories: Array<Omit<Category, 'id'> & { bubbleIds: string[]; suggestedTag?: string }>) => void
+  ensureDistinctCategoryColors: () => void
 
   getFilteredBubbles: () => Bubble[]
 }
@@ -124,11 +184,14 @@ export const useBubbleStore = create<BubbleState>()(persist((set, get) => ({
   canvasMode: 'pan',
 
   addBubble: (content, tag = '', x, y) => {
+    const existingTagColor = tag
+      ? get().bubbles.find((bubble) => bubble.tag === tag && bubble.color)?.color
+      : undefined
     const bubble: Bubble = {
       id: generateId(),
       content,
       tag,
-      color: TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)],
+      color: existingTagColor || (tag ? TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)] : DEFAULT_BUBBLE_COLOR),
       categoryId: '',
       x: x ?? (Math.random() - 0.5) * 200,
       y: y ?? (Math.random() - 0.5) * 200,
@@ -141,11 +204,52 @@ export const useBubbleStore = create<BubbleState>()(persist((set, get) => ({
   },
 
   updateBubble: (id, updates) => {
-    set((state) => ({
-      bubbles: state.bubbles.map((b) =>
-        b.id === id ? { ...b, ...updates, updatedAt: new Date().toISOString() } : b
-      ),
-    }))
+    set((state) => {
+      const target = state.bubbles.find((bubble) => bubble.id === id)
+      if (!target) return state
+
+      const nextTag = updates.tag ?? target.tag
+      const nextCategoryId = updates.categoryId ?? target.categoryId
+      const inheritedTagColor = updates.tag && !updates.color
+        ? state.bubbles.find((bubble) => bubble.tag === updates.tag && bubble.color)?.color
+        : undefined
+      const nextUpdates = inheritedTagColor ? { ...updates, color: inheritedTagColor } : updates
+      const nextColor = nextUpdates.color
+      const now = new Date().toISOString()
+
+      const bubbles = state.bubbles.map((bubble) => {
+        const isTarget = bubble.id === id
+        const sharesCategory = Boolean(nextCategoryId && bubble.categoryId === nextCategoryId)
+        const sharesTag = Boolean(nextTag && bubble.tag === nextTag)
+
+        if (isTarget) {
+          return { ...bubble, ...nextUpdates, updatedAt: now }
+        }
+
+        if (sharesCategory && (nextColor || nextUpdates.tag)) {
+          return {
+            ...bubble,
+            ...(nextUpdates.tag ? { tag: nextUpdates.tag } : {}),
+            ...(nextColor ? { color: nextColor } : {}),
+            updatedAt: now,
+          }
+        }
+
+        if (nextColor && sharesTag) {
+          return { ...bubble, color: nextColor, updatedAt: now }
+        }
+
+        return bubble
+      })
+
+      const categories = nextColor && nextCategoryId
+        ? state.categories.map((category) =>
+          category.id === nextCategoryId ? { ...category, color: nextColor } : category
+        )
+        : state.categories
+
+      return { bubbles, categories }
+    })
   },
 
   deleteBubble: (id) => {
@@ -254,26 +358,77 @@ export const useBubbleStore = create<BubbleState>()(persist((set, get) => ({
   setRelations: (relations) => set({ relations }),
 
   setCategoriesFromAI: (aiCategories) => {
-    const newCategories: Category[] = aiCategories.map((c) => ({
-      id: generateId(),
-      name: c.name,
-      description: c.description,
-      color: c.color || TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)],
-      confidence: c.confidence,
-    }))
+    const usedColors = new Set<string>()
+    const newCategories: Category[] = aiCategories.map((c, index) => {
+      const color = pickDistinctCategoryColor(index, usedColors, c.color)
+      return {
+        id: generateId(),
+        name: c.name,
+        description: c.description,
+        color,
+        confidence: c.confidence,
+      }
+    })
 
     set((state) => {
-      const updatedBubbles = [...state.bubbles]
+      const now = new Date().toISOString()
+      const categoryByBubbleId = new Map<string, { category: Category; tag: string }>()
       aiCategories.forEach((aiCat, index) => {
-        const catId = newCategories[index].id
+        const category = newCategories[index]
+        const tag = aiCat.suggestedTag?.trim() || category.name
         aiCat.bubbleIds.forEach((bubbleId) => {
-          const idx = updatedBubbles.findIndex((b) => b.id === bubbleId)
-          if (idx !== -1) {
-            updatedBubbles[idx] = { ...updatedBubbles[idx], categoryId: catId }
-          }
+          categoryByBubbleId.set(bubbleId, { category, tag })
         })
       })
-      return { categories: [...state.categories, ...newCategories], bubbles: updatedBubbles }
+
+      const updatedBubbles = state.bubbles.map((bubble) => {
+        const assignment = categoryByBubbleId.get(bubble.id)
+        if (!assignment) {
+          return bubble.categoryId ? { ...bubble, categoryId: '', updatedAt: now } : bubble
+        }
+
+        return {
+          ...bubble,
+          categoryId: assignment.category.id,
+          tag: assignment.tag,
+          color: assignment.category.color,
+          updatedAt: now,
+        }
+      })
+
+      return { categories: newCategories, bubbles: updatedBubbles }
+    })
+  },
+
+  ensureDistinctCategoryColors: () => {
+    set((state) => {
+      const usedColors = new Set<string>()
+      let changed = false
+      const colorByCategoryId = new Map<string, string>()
+      const categories = state.categories.map((category, index) => {
+        const normalized = normalizeColor(category.color)
+        const needsNewColor = !normalized || usedColors.has(normalized)
+        const color = needsNewColor
+          ? pickDistinctCategoryColor(index, usedColors)
+          : pickDistinctCategoryColor(index, usedColors, category.color)
+        colorByCategoryId.set(category.id, color)
+
+        if (color !== category.color) {
+          changed = true
+          return { ...category, color }
+        }
+
+        return category
+      })
+
+      const bubbles = state.bubbles.map((bubble) => {
+        const categoryColor = bubble.categoryId ? colorByCategoryId.get(bubble.categoryId) : undefined
+        if (!categoryColor || bubble.color === categoryColor) return bubble
+        changed = true
+        return { ...bubble, color: categoryColor }
+      })
+
+      return changed ? { categories, bubbles } : state
     })
   },
 

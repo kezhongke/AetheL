@@ -9,8 +9,8 @@ const navItems = [
 
 export default function MainNavigation() {
   return (
-    <nav className="fixed left-6 top-6 z-50 floating-window rounded-full p-1.5 flex items-center gap-1">
-      <div className="mr-1 h-10 w-10 overflow-hidden rounded-full bg-white/75 ring-1 ring-white/75 shadow-glass">
+    <nav className="fixed left-6 top-5 z-50 floating-window rounded-full p-1 flex items-center gap-0.5">
+      <div className="mr-1 h-8 w-8 overflow-hidden rounded-full bg-white/75 ring-1 ring-white/75 shadow-glass">
         <img src="/hermit-crab-mascot.png" alt="Aethel mascot" className="h-full w-full object-cover" />
       </div>
       {navItems.map(({ to, icon: Icon, label }) => (
@@ -18,15 +18,15 @@ export default function MainNavigation() {
           key={to}
           to={to}
           className={({ isActive }) =>
-            `h-10 rounded-full px-3 flex items-center gap-2 transition-all ${
+            `h-8 rounded-full px-2.5 flex items-center gap-1.5 transition-all ${
               isActive
                 ? 'bg-primary text-on-primary shadow-glow-primary'
                 : 'text-on-surface hover:text-primary hover:bg-primary-fixed/35'
             }`
           }
         >
-          <Icon size={15} />
-          <span className="text-[12px] font-semibold">{label}</span>
+          <Icon size={14} />
+          <span className="text-[11px] font-semibold">{label}</span>
         </NavLink>
       ))}
     </nav>
