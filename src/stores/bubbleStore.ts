@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { createJSONStorage, persist } from 'zustand/middleware'
 
 export interface Bubble {
   id: string
@@ -42,6 +43,8 @@ const TAG_COLORS = [
   '#6f7973', '#3f4944', '#474744', '#00513b',
 ]
 
+const BUBBLE_STORE_VERSION = 1
+
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 9)
 }
@@ -84,7 +87,33 @@ interface BubbleState {
   getFilteredBubbles: () => Bubble[]
 }
 
-export const useBubbleStore = create<BubbleState>((set, get) => ({
+type PersistedBubbleState = Pick<
+  BubbleState,
+  'bubbles' | 'categories' | 'relations' | 'extensions' | 'filterTag' | 'viewport' | 'canvasMode'
+>
+
+function migrateBubbleState(persistedState: unknown): PersistedBubbleState {
+  const state = (persistedState || {}) as Partial<PersistedBubbleState>
+
+  return {
+    bubbles: (state.bubbles || []).map((bubble) => ({
+      ...bubble,
+      tag: bubble.tag || '',
+      categoryId: bubble.categoryId || '',
+      interactionWeight: typeof bubble.interactionWeight === 'number' ? bubble.interactionWeight : 0,
+      createdAt: bubble.createdAt || new Date().toISOString(),
+      updatedAt: bubble.updatedAt || bubble.createdAt || new Date().toISOString(),
+    })),
+    categories: state.categories || [],
+    relations: state.relations || [],
+    extensions: state.extensions || [],
+    filterTag: state.filterTag || null,
+    viewport: state.viewport || { x: 0, y: 0, zoom: 1 },
+    canvasMode: state.canvasMode || 'pan',
+  }
+}
+
+export const useBubbleStore = create<BubbleState>()(persist((set, get) => ({
   bubbles: [],
   categories: [],
   relations: [],
@@ -253,4 +282,18 @@ export const useBubbleStore = create<BubbleState>((set, get) => ({
     if (!filterTag) return bubbles
     return bubbles.filter((b) => b.tag === filterTag)
   },
+}), {
+  name: 'aethel-bubble-store',
+  version: BUBBLE_STORE_VERSION,
+  storage: createJSONStorage(() => localStorage),
+  partialize: (state): PersistedBubbleState => ({
+    bubbles: state.bubbles,
+    categories: state.categories,
+    relations: state.relations,
+    extensions: state.extensions,
+    filterTag: state.filterTag,
+    viewport: state.viewport,
+    canvasMode: state.canvasMode,
+  }),
+  migrate: (persistedState) => migrateBubbleState(persistedState),
 }))

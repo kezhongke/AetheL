@@ -8,6 +8,7 @@ import { useSnapshotStore } from '@/stores/snapshotStore'
 interface SnapshotPanelProps {
   onClose?: () => void
   embedded?: boolean
+  contained?: boolean
 }
 
 function formatTime(iso: string) {
@@ -20,7 +21,7 @@ function formatTime(iso: string) {
   })
 }
 
-export default function SnapshotPanel({ onClose, embedded = false }: SnapshotPanelProps) {
+export default function SnapshotPanel({ onClose, embedded = false, contained = false }: SnapshotPanelProps) {
   const { bubbles, categories, viewport, extensions, relations, filterTag } = useBubbleStore()
   const { snapshots, createSnapshot, restoreSnapshot, deleteSnapshot } = useSnapshotStore()
   const [snapshotName, setSnapshotName] = useState('')
@@ -96,7 +97,9 @@ export default function SnapshotPanel({ onClose, embedded = false }: SnapshotPan
 
   return (
     <div className={embedded
-      ? 'absolute top-4 right-4 bottom-4 z-40 w-[360px] glass-panel bg-surface/80 p-4 flex flex-col'
+      ? contained
+        ? 'h-full w-full glass-panel floating-window bg-surface/80 p-4 flex flex-col overflow-hidden'
+        : 'absolute top-4 right-4 bottom-4 z-40 w-[360px] glass-panel bg-surface/80 p-4 flex flex-col'
       : 'space-y-6'
     }>
       <div className="flex items-center justify-between gap-3">

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { createJSONStorage, persist } from 'zustand/middleware'
 import type { Bubble, BubbleExtension, BubbleRelation, Category } from './bubbleStore'
 
 export interface SnapshotAnchor {
@@ -50,6 +51,8 @@ export interface Snapshot {
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 9)
 }
+
+const SNAPSHOT_STORE_VERSION = 1
 
 interface SnapshotState {
   snapshots: Snapshot[]
@@ -109,7 +112,57 @@ export function createFallbackCognition(bubbles: Bubble[]): SnapshotCognition {
   }
 }
 
-export const useSnapshotStore = create<SnapshotState>((set, get) => ({
+type PersistedSnapshotState = Pick<SnapshotState, 'snapshots'>
+type PersistedSnapshot = Partial<Snapshot> & {
+  canvasState?: Partial<Snapshot['canvasState']>
+  tagState?: Partial<Snapshot['tagState']>
+}
+
+function normalizeCognitionForStorage(cognition: Partial<SnapshotCognition> | undefined, bubbles: Bubble[]) {
+  const fallback = createFallbackCognition(bubbles)
+
+  return {
+    statusSnapshot: cognition?.statusSnapshot || fallback.statusSnapshot,
+    logicFlow: cognition?.logicFlow || fallback.logicFlow,
+    cognitiveGaps: Array.isArray(cognition?.cognitiveGaps) ? cognition.cognitiveGaps : fallback.cognitiveGaps,
+    semanticAnchors: Array.isArray(cognition?.semanticAnchors) ? cognition.semanticAnchors : fallback.semanticAnchors,
+    wakeTrigger: cognition?.wakeTrigger || fallback.wakeTrigger,
+    level2: Array.isArray(cognition?.level2) ? cognition.level2 : fallback.level2,
+    level3: Array.isArray(cognition?.level3) ? cognition.level3 : fallback.level3,
+  }
+}
+
+function migrateSnapshotState(persistedState: unknown): PersistedSnapshotState {
+  const state = (persistedState || {}) as Partial<PersistedSnapshotState>
+
+  return {
+    snapshots: (state.snapshots || []).map((snapshot: PersistedSnapshot) => {
+      const bubbles = snapshot.canvasState?.bubbles || []
+      const categories = snapshot.tagState?.categories || []
+      const tags = snapshot.tagState?.tags || [...new Set(bubbles.map((bubble) => bubble.tag).filter(Boolean))]
+
+      return {
+        id: snapshot.id || generateId(),
+        name: snapshot.name || '未命名快照',
+        thumbnail: snapshot.thumbnail || '',
+        createdAt: snapshot.createdAt || new Date().toISOString(),
+        cognition: normalizeCognitionForStorage(snapshot.cognition, bubbles),
+        canvasState: {
+          bubbles,
+          viewport: snapshot.canvasState?.viewport || { x: 0, y: 0, zoom: 1 },
+          relations: snapshot.canvasState?.relations || [],
+          extensions: snapshot.canvasState?.extensions || [],
+        },
+        tagState: {
+          tags,
+          categories,
+        },
+      }
+    }),
+  }
+}
+
+export const useSnapshotStore = create<SnapshotState>()(persist((set, get) => ({
   snapshots: [],
 
   createSnapshot: (name, bubbles, viewport, categories, cognition, relations = [], extensions = []) => {
@@ -148,4 +201,15 @@ export const useSnapshotStore = create<SnapshotState>((set, get) => ({
       ),
     }))
   },
+}), {
+  name: 'aethel-snapshot-store',
+  version: SNAPSHOT_STORE_VERSION,
+  storage: createJSONStorage(() => localStorage),
+  partialize: (state): PersistedSnapshotState => ({
+    snapshots: state.snapshots.map((snapshot) => ({
+      ...snapshot,
+      thumbnail: '',
+    })),
+  }),
+  migrate: (persistedState) => migrateSnapshotState(persistedState),
 }))

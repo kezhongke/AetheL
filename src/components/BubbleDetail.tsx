@@ -20,20 +20,20 @@ export default function BubbleDetail() {
   if (!bubble) return null
 
   return (
-    <div className="absolute top-4 right-[19.5rem] z-40 w-72 glass-panel p-5 space-y-4 animate-bubble-in">
+    <div className="absolute top-24 bottom-56 left-6 z-40 w-[380px] max-w-[calc(100%-3rem)] glass-panel floating-window p-5 space-y-4 overflow-y-auto animate-bubble-in">
       <div className="flex items-center justify-between">
-        <span className="text-[13px] text-primary font-semibold tracking-wider">气泡详情</span>
-        <button onClick={() => selectBubble(null)} className="text-outline hover:text-on-surface transition-colors">
+        <span className="text-[15px] text-on-surface font-semibold">气泡详情</span>
+        <button onClick={() => selectBubble(null)} className="h-8 w-8 rounded-full flex items-center justify-center text-outline hover:bg-surface-container/70 hover:text-on-surface transition-colors">
           <X size={14} />
         </button>
       </div>
 
       <div>
-        <label className="text-[11px] text-on-surface-variant font-semibold tracking-wider block mb-1">内容</label>
+        <label className="text-[12px] text-on-surface-variant font-semibold block mb-1">内容</label>
         <textarea
           value={bubble.content}
           onChange={(e) => updateBubble(bubble.id, { content: e.target.value })}
-          className="w-full input-field text-[13px] min-h-[60px] resize-none"
+          className="w-full input-field text-[14px] min-h-[84px] resize-none leading-relaxed"
           rows={3}
         />
       </div>
@@ -76,15 +76,15 @@ export default function BubbleDetail() {
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-xl bg-white/35 border border-outline-variant/20 p-2.5">
-          <div className="flex items-center gap-1.5 text-[11px] text-on-surface-variant font-semibold tracking-wider">
+        <div className="rounded-[20px] bg-white/45 border border-white/60 p-3">
+          <div className="flex items-center gap-1.5 text-[12px] text-on-surface-variant font-semibold">
             <Activity size={11} className="text-primary" />
             交互权重
           </div>
           <div className="text-lg font-serif text-primary mt-1">{bubble.interactionWeight || 0}</div>
         </div>
-        <div className="rounded-xl bg-white/35 border border-outline-variant/20 p-2.5">
-          <div className="flex items-center gap-1.5 text-[11px] text-on-surface-variant font-semibold tracking-wider">
+        <div className="rounded-[20px] bg-white/45 border border-white/60 p-3">
+          <div className="flex items-center gap-1.5 text-[12px] text-on-surface-variant font-semibold">
             <History size={11} className="text-primary" />
             参与快照
           </div>

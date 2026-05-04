@@ -8,7 +8,11 @@ const TAG_COLORS = [
   '#6f7973', '#3f4944', '#474744', '#00513b',
 ]
 
-export default function AICategorizePanel() {
+interface AICategorizePanelProps {
+  onClose?: () => void
+}
+
+export default function AICategorizePanel({ onClose }: AICategorizePanelProps) {
   const { bubbles, categories, setCategoriesFromAI, setRelations } = useBubbleStore()
   const { isLoading, categorizeResult, categorize, clearCategorizeResult } = useAiStore()
   const [isExpanded, setIsExpanded] = useState(true)
@@ -58,23 +62,37 @@ export default function AICategorizePanel() {
   }
 
   return (
-    <div className="w-72 glass-panel !rounded-none !border-l !border-l-white/40 flex flex-col">
+    <div className="h-full w-full glass-panel floating-window flex flex-col overflow-hidden">
       <div
-        className="px-4 py-3 border-b border-outline-variant/30 flex items-center justify-between cursor-pointer"
+        className="px-5 py-4 border-b border-outline-variant/30 flex items-center justify-between cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center gap-2 text-on-surface-variant">
-          <Brain size={14} className="text-primary" />
-          <span className="text-[13px] font-semibold tracking-wider">AI 智能归类</span>
+        <div className="flex items-center gap-2 text-on-surface">
+          <Brain size={16} className="text-primary" />
+          <span className="text-[15px] font-semibold">AI 智能归类</span>
         </div>
-        {isExpanded ? <ChevronUp size={14} className="text-outline" /> : <ChevronDown size={14} className="text-outline" />}
+        <div className="flex items-center gap-1">
+          {isExpanded ? <ChevronUp size={14} className="text-outline" /> : <ChevronDown size={14} className="text-outline" />}
+          {onClose && (
+            <button
+              onClick={(event) => {
+                event.stopPropagation()
+                onClose()
+              }}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container/70 transition-all"
+              title="关闭 AI 归类"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
       </div>
 
       {isExpanded && (
         <div className="flex-1 overflow-y-auto">
           {!categorizeResult ? (
-            <div className="p-4 space-y-4">
-              <div className="text-[13px] text-on-surface-variant leading-relaxed">
+            <div className="p-5 space-y-5">
+              <div className="text-[14px] text-on-surface-variant leading-relaxed">
                 AI 将分析所有气泡内容，自动归类分组、推荐标签、检测关联与矛盾。
               </div>
 
@@ -104,17 +122,17 @@ export default function AICategorizePanel() {
 
               {categories.length > 0 && (
                 <div className="space-y-2">
-                  <div className="text-[13px] text-on-surface-variant font-semibold tracking-wider">已有分类</div>
+                  <div className="text-[14px] text-on-surface font-semibold">已有分类</div>
                   {categories.map((cat) => {
                     const count = bubbles.filter((b) => b.categoryId === cat.id).length
                     return (
-                      <div key={cat.id} className="glass-panel !rounded-xl p-2.5">
+                      <div key={cat.id} className="rounded-[22px] bg-white/48 p-3 ring-1 ring-white/60">
                         <div className="flex items-center gap-2">
                           <div
                             className="w-2 h-2 rounded-full"
                             style={{ backgroundColor: cat.color }}
                           />
-                          <span className="text-[13px] text-on-surface">{cat.name}</span>
+                          <span className="text-[14px] text-on-surface">{cat.name}</span>
                           <span className="text-[11px] text-outline ml-auto">{count} 气泡</span>
                         </div>
                         {cat.description && (
@@ -127,13 +145,13 @@ export default function AICategorizePanel() {
               )}
             </div>
           ) : (
-            <div className="p-4 space-y-4">
-              <div className="text-[13px] text-primary font-semibold tracking-wider">归类结果</div>
+            <div className="p-5 space-y-4">
+              <div className="text-[14px] text-primary font-semibold">归类结果</div>
 
               {categorizeResult.categories.map((cat, i) => (
-                <div key={i} className="glass-panel !rounded-xl p-3 space-y-1.5">
+                <div key={i} className="rounded-[22px] bg-white/50 p-4 space-y-2 ring-1 ring-white/60">
                   <div className="flex items-center justify-between">
-                    <span className="text-[13px] text-on-surface font-medium">{cat.name}</span>
+                    <span className="text-[14px] text-on-surface font-medium">{cat.name}</span>
                     <span className="text-[11px] text-outline">
                       置信度 {(cat.confidence * 100).toFixed(0)}%
                     </span>
@@ -150,7 +168,7 @@ export default function AICategorizePanel() {
 
               {categorizeResult.suggestedTags.length > 0 && (
                 <div className="space-y-2">
-                  <div className="text-[13px] text-on-surface-variant font-semibold tracking-wider">推荐标签</div>
+                  <div className="text-[14px] text-on-surface font-semibold">推荐标签</div>
                   <div className="flex flex-wrap gap-1.5">
                     {categorizeResult.suggestedTags.map((tag, i) => (
                       <span
@@ -171,7 +189,7 @@ export default function AICategorizePanel() {
 
               {categorizeResult.relations.length > 0 && (
                 <div className="space-y-2">
-                  <div className="text-[13px] text-on-surface-variant font-semibold tracking-wider">关联检测</div>
+                  <div className="text-[14px] text-on-surface font-semibold">关联检测</div>
                   {categorizeResult.relations.map((rel, i) => {
                     const config = relationTypeConfig[rel.type]
                     const Icon = config.icon

@@ -1,5 +1,5 @@
-# Aethel: Dynamic Morphological PRD & Cognitive Flow Space
-# Aethel: 动态形态 PRD 与认知流场
+# Aethel: AI Cognitive Workspace for Product Thinking
+# Aethel：面向产品构思的 AI 认知工作区
 
 [English](#english) | [中文](#中文)
 
@@ -8,14 +8,14 @@
 ## English
 
 ### 🌟 Overview
-**Aethel** is an AI-powered product management and creative writing tool that uses "bubbles" as cognitive carriers. It helps users capture fragmented inspirations through text or voice, automatically categorizes and associates these ideas using AI, and eventually assists in generating structured PRD (Product Requirement Documents).
+**Aethel** is an AI cognitive workspace for product thinking. It uses "bubbles" as cognitive carriers to help product managers, founders, designers, and builders capture early product ideas, let AI ask clarifying follow-up questions, organize emerging logic into semantic snapshots, and turn selected thinking threads into structured PRD drafts.
 
 ### 🚀 Core Features
-- **Inspiration Bubble Space**: Quickly capture ideas via text or voice. Drag, zoom, and organize bubbles on an infinite canvas.
+- **Product Thinking Bubble Space**: Quickly capture product ideas, assumptions, user scenarios, constraints, and open questions via text or voice.
 - **AI Intelligent Categorization**: Automatically groups related bubbles, recommends tags, and detects correlations (related, contradictory, or duplicate).
-- **Cognitive Context Management**: Save and restore "snapshots" of your workspace to switch between different thinking flows seamlessly.
-- **PRD Output Center**: Stream-generate professional PRD modules based on selected bubble sets, supporting Markdown and PDF exports.
-- **AI Follow-up System**: Interactive AI that asks insightful questions to help you refine and expand your initial thoughts.
+- **Cognitive Snapshot System**: Save, compress, and restore product-thinking contexts through semantic anchors, logic flows, and wake-up prompts.
+- **PRD Output Center**: Stream-generate structured product requirement drafts based on selected bubble sets, supporting Markdown and PDF exports.
+- **AI Follow-up System**: Interactive AI asks clarifying questions to help refine goals, users, scenarios, risks, and success criteria.
 
 ### 🛠 Tech Stack
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Zustand, Framer Motion.
@@ -57,14 +57,14 @@ npm run dev
 ## 中文
 
 ### 🌟 项目概述
-**Aethel** 是一款以“气泡”为思维载体的 AI 辅助产品管理与创意写作工具。它旨在帮助用户通过文字或语音快速捕捉碎片化灵感，利用 AI 自动进行归类与关联，最终辅助生成结构严密的 PRD 文档。
+**Aethel** 是一款面向产品构思的 AI 认知工作区。它以“气泡”为思维载体，帮助产品经理、创业者、设计师和构建者捕捉早期产品想法，通过 AI 追问澄清目标、用户、场景与风险，将逐渐浮现的逻辑整理为语义快照，并把选定的思考线索生成结构化 PRD 草稿。
 
 ### 🚀 核心功能
-- **灵感气泡空间**：支持文字/语音快速录入，可在无限画布上自由拖拽、缩放和组织气泡。
+- **产品构思气泡空间**：支持文字/语音快速录入产品想法、假设、用户场景、约束与开放问题。
 - **AI 智能归类引擎**：自动分析气泡关联性，智能推荐标签，并检测重复或矛盾的内容。
-- **认知上下文管理**：支持工作区“快照”保存与恢复，在不同思维流之间无缝切换。
-- **PRD 输出中心**：基于选定的气泡集合，流式生成专业的 PRD 模块，支持导出为 Markdown 或 PDF。
-- **AI 追问系统**：AI 会根据录入的内容提出启发式追问，引导用户完善思维细节。
+- **认知快照系统**：通过语义锚点、逻辑脉络与唤醒指令，保存、压缩并恢复产品构思上下文。
+- **PRD 输出中心**：基于选定的气泡集合，流式生成结构化产品需求草稿，支持导出为 Markdown 或 PDF。
+- **AI 追问系统**：AI 会根据录入内容提出启发式追问，引导用户澄清目标用户、使用场景、风险与成功标准。
 
 ### 🛠 技术栈
 - **前端**：React 18, TypeScript, Vite, Tailwind CSS, Zustand, Framer Motion。

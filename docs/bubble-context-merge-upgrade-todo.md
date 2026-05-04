@@ -2,13 +2,14 @@
 
 ## 目标结论
 
-将“上下文管理”从独立主模块调整为“灵感气泡”的核心能力之一。
+将产品形态明确为“面向产品构思的 AI 认知工作区 / AI cognitive workspace for product thinking”，并将“上下文管理”从独立主模块调整为“灵感气泡”的核心能力之一。
 
 合并后的产品心智：
 
-- 灵感气泡是主工作区，负责捕捉、组织、联想、沉淀与恢复思考现场。
+- 灵感气泡是主工作区，负责捕捉、组织、联想、沉淀与恢复产品构思现场。
 - 上下文管理成为工作区的“记忆层”“快照层”“语义压缩层”。
 - 独立的上下文页面保留为“快照历史库”，用于批量浏览、恢复、删除、回顾。
+- 目标用户是产品经理、创业者、设计师、独立开发者和需要把模糊想法推进为产品方案的构建者。
 
 不建议直接删除上下文模块，而是采用“主体验合并，历史库保留”的渐进式方案。
 
@@ -23,8 +24,8 @@
 ## 阶段 0：现状收敛
 
 - [x] 确认当前所有相关改动通过 `npm run check`。
-- [ ] 确认本地后端端口策略，避免 `3000` 占用导致 AI 快照接口不可用。
-- [ ] 确认 `vite.config.ts` 代理目标与后端实际端口一致。
+- [x] 确认本地后端端口策略，避免 `3000` 占用导致 AI 快照接口不可用。
+- [x] 确认 `vite.config.ts` 代理目标与后端实际端口一致。
 - [ ] 梳理现有未提交改动，区分 bugfix、AI 能力、UI 合并三类。
 
 验收标准：
@@ -222,9 +223,9 @@ interface SnapshotCognition {
 
 当前 Zustand store 没有持久化，刷新后数据会丢失。合并后快照价值更高，需要补齐持久化。
 
-- [ ] 为 `bubbleStore` 增加 localStorage 持久化。
-- [ ] 为 `snapshotStore` 增加 localStorage 持久化。
-- [ ] 设计数据版本号：
+- [x] 为 `bubbleStore` 增加 localStorage 持久化。
+- [x] 为 `snapshotStore` 增加 localStorage 持久化。
+- [x] 设计数据版本号：
 
 ```ts
 interface PersistedState {
@@ -234,21 +235,194 @@ interface PersistedState {
 }
 ```
 
-- [ ] 提供旧数据迁移：
+- [x] 提供旧数据迁移：
   - 无 `interactionWeight` 的气泡补 0。
   - 无 `cognition` 的快照生成 fallback。
-- [ ] 避免存储大型 canvas 截图或过大 AI 输出。
+- [x] 避免存储大型 canvas 截图或过大 AI 输出。
 
 验收标准：
 
-- [ ] 刷新页面后气泡仍在。
-- [ ] 刷新页面后快照仍在。
-- [ ] 老快照不会导致页面崩溃。
+- [x] 刷新页面后气泡仍在。
+- [x] 刷新页面后快照仍在。
+- [x] 老快照不会导致页面崩溃。
 
-## 阶段 7：视觉整合
+## 阶段 7：Markdown 知识原子持久层
 
-- [ ] 气泡空间主页面保持画布优先，快照功能作为轻量工具层出现。
-- [ ] 避免新增大型说明卡片或营销式布局。
+目标：将每个气泡升级为一个独立 Markdown 文档，使气泡从前端 UI 状态变成可版本化、可迁移、可长期演化的知识原子。
+
+核心判断：
+
+- 这个方向合理，适合 Aethel 的“认知工作区”定位。
+- 不建议把 Markdown 当高频 UI 数据库使用。
+- 推荐采用双层架构：
+  - Zustand 负责前端交互和即时渲染。
+  - Markdown 负责气泡内容、语义元数据和长期存储。
+  - JSON 负责高频画布布局、视口、拖拽位置等运行时状态。
+
+推荐文件结构：
+
+```text
+data/
+├─ bubbles/
+│  ├─ bubble_abc.md
+│  ├─ bubble_def.md
+│  └─ bubble_xyz.md
+├─ snapshots/
+│  ├─ snapshot_001.md
+│  └─ snapshot_002.md
+└─ workspace.json
+```
+
+职责划分：
+
+- `data/bubbles/*.md`：每个气泡一个文档，保存内容、标签、分类、追问补充、语义关系和低频元数据。
+- `data/workspace.json`：保存高频画布状态，如坐标、缩放、当前筛选、当前选中、面板状态。
+- `data/snapshots/*.md`：保存快照摘要、语义锚点、唤醒指令，并引用一组 bubble IDs。
+
+气泡 Markdown schema 草案：
+
+```md
+---
+id: bubble_abc
+title: AI 辅助内容生产
+tag: 人机分工边界
+categoryId: category_xxx
+color: "#246a52"
+interactionWeight: 3
+createdAt: 2026-05-04T08:00:00.000Z
+updatedAt: 2026-05-04T08:30:00.000Z
+---
+
+# AI 辅助内容生产
+
+原始气泡内容……
+
+## 追问补充
+
+- 追问：目标用户是谁？
+  回答：新手内容编辑、运营同学……
+
+## 关系
+
+- related: bubble_def，因为……
+- contradictory: bubble_xyz，因为……
+```
+
+快照 Markdown schema 草案：
+
+```md
+---
+id: snapshot_001
+name: 新手内容生产工作区
+createdAt: 2026-05-04T08:40:00.000Z
+bubbleIds:
+  - bubble_abc
+  - bubble_def
+semanticAnchors:
+  - 人机分工
+  - 内容生成
+---
+
+# 当前状态快照
+
+一句话定义该工作区的核心议题。
+
+## 逻辑脉络
+
+从……出发，我们穿过……，最终汇聚于……
+
+## 认知待办/缺口
+
+- 需要明确……
+
+## 唤醒指令
+
+你上次在这里讨论到……
+```
+
+后端文件 API 规划：
+
+- [ ] 新增 `api/routes/bubbles.ts`。
+- [ ] 新增 `api/routes/snapshots.ts` 或合并到 `api/routes/workspace.ts`。
+- [ ] 新增 Markdown 读写工具模块：
+
+```text
+api/storage/
+├─ markdown.ts
+├─ bubbleFiles.ts
+├─ snapshotFiles.ts
+└─ workspaceFile.ts
+```
+
+- [ ] API 设计：
+
+```text
+GET    /api/bubbles
+GET    /api/bubbles/:id
+POST   /api/bubbles
+PATCH  /api/bubbles/:id
+DELETE /api/bubbles/:id
+
+GET    /api/workspace
+PATCH  /api/workspace
+
+GET    /api/snapshots
+POST   /api/snapshots
+PATCH  /api/snapshots/:id
+DELETE /api/snapshots/:id
+```
+
+- [ ] 依赖选择：
+  - 使用 `gray-matter` 解析 frontmatter。
+  - 使用 Node `fs/promises` 读写文件。
+  - 文件名使用 `id`，不要使用用户输入标题直接作为文件名。
+
+前端迁移策略：
+
+- [ ] 页面启动时调用 `GET /api/bubbles` 和 `GET /api/workspace`，恢复 Zustand。
+- [ ] 创建气泡时先更新 Zustand，再异步 `POST /api/bubbles`。
+- [ ] 编辑气泡内容、标签、追问补充时 debounce 后 `PATCH /api/bubbles/:id`。
+- [ ] 拖拽、缩放、筛选等高频状态只写 `workspace.json`，不要频繁改 Markdown。
+- [ ] 快照创建时写 `data/snapshots/*.md`，快照引用 bubble IDs，不复制大量气泡正文。
+
+写入节流与冲突控制：
+
+- [ ] 气泡正文和标签编辑使用 500-1000ms debounce。
+- [ ] 拖拽位置只在 drag end 或定时批量保存。
+- [ ] 后端写文件时使用临时文件 + rename，降低半写入风险。
+- [ ] 同一个气泡的并发写入排队处理。
+- [ ] 文件写入失败时 UI 显示轻量保存失败状态，Zustand 不立即回滚。
+
+Git 友好策略：
+
+- [ ] Markdown 文档保持稳定字段顺序，减少 diff 噪音。
+- [ ] 高频坐标不写入 bubble md，避免每次拖拽都产生文档 diff。
+- [ ] `workspace.json` 可选择纳入 Git，也可加入 `.gitignore`，根据产品定位决定。
+- [ ] 为导入/导出预留 `Export Markdown Vault` 能力。
+
+安全与路径约束：
+
+- [ ] 所有文件写入限制在项目内 `data/` 目录。
+- [ ] 后端 API 禁止接收任意文件路径。
+- [ ] 删除气泡时先移动到 `data/.trash/`，二次确认后再物理删除。
+- [ ] Markdown 正文允许用户内容，但 frontmatter 字段必须经过白名单序列化。
+
+验收标准：
+
+- [ ] 每创建一个气泡，`data/bubbles/` 下生成一个对应 `.md` 文件。
+- [ ] 刷新页面后，气泡从 Markdown + workspace JSON 恢复。
+- [ ] 编辑气泡内容后，对应 `.md` 文件更新。
+- [ ] 追问补充写回对应气泡 `.md`。
+- [ ] 创建快照后，`data/snapshots/` 下生成对应 `.md` 文件。
+- [ ] 快照通过 bubble IDs 引用气泡文档。
+- [ ] 拖拽气泡不会频繁改写 Markdown 文件。
+- [ ] `npm run check` 通过。
+- [ ] `npm run build` 通过。
+
+## 阶段 8：视觉整合
+
+- [x] 气泡空间主页面保持画布优先，快照功能作为轻量工具层出现。
+- [x] 避免新增大型说明卡片或营销式布局。
 - [ ] 快照卡片使用紧凑结构，默认只展示 Level 1。
 - [ ] 语义锚点使用小标签样式。
 - [ ] 唤醒指令用轻量引用块。
@@ -259,9 +433,9 @@ interface PersistedState {
 
 - [ ] 画布主体验不被快照面板压迫。
 - [ ] 快照展开后文本不溢出。
-- [ ] 窄屏下按钮和标签不重叠。
+- [x] 窄屏下按钮和标签不重叠。
 
-## 阶段 8：路由与导航收敛
+## 阶段 9：路由与导航收敛
 
 - [ ] 第一阶段保留当前导航：
 
@@ -280,7 +454,7 @@ PRD
 - [ ] 用户能清楚理解快照库是气泡工作区的历史档案。
 - [ ] 不再产生“上下文是另一个独立业务模块”的误解。
 
-## 阶段 9：测试清单
+## 阶段 10：测试清单
 
 - [ ] 创建 0 个气泡时，快照按钮禁用或提示。
 - [ ] 创建 1 个气泡时，生成基础快照。
@@ -300,14 +474,17 @@ PRD
 1. 先完成工作区内快照入口，不动导航。
 2. 抽出快照组件，复用到 `/context` 页面。
 3. 加入持久化，保护用户数据。
-4. 抽离 AI prompt 文件，降低后端维护成本。
-5. 升级多维权重机制。
-6. 最后再调整导航命名和模块定位。
+4. 引入 Markdown 知识原子持久层，让气泡成为可版本化文档。
+5. 抽离 AI prompt 文件，降低后端维护成本。
+6. 升级多维权重机制。
+7. 最后再调整导航命名和模块定位。
 
 ## 风险与取舍
 
 - AI 快照会增加等待时间：需要 loading、fallback 和局部失败处理。
 - 快照数据会变大：需要持久化版本和大小控制。
+- Markdown 文件适合保存知识内容，不适合承载拖拽坐标等高频 UI 状态。
+- 文件写入会引入异步失败和并发冲突，需要 debounce、写入队列和失败提示。
 - 合并后页面可能过载：必须坚持默认 Level 1，不主动展开长内容。
 - 权重机制可能让旧想法被过度置顶：需要保留“最近气泡”和“高频气泡”的平衡。
 

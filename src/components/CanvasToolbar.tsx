@@ -11,14 +11,14 @@ export default function CanvasToolbar() {
   const { canvasMode, setCanvasMode, setViewport } = useBubbleStore()
 
   return (
-    <div className="absolute top-4 left-4 z-30 glass-panel !rounded-2xl p-1.5 flex flex-col gap-1">
+    <div className="absolute top-5 left-5 z-30 glass-panel !rounded-full p-2 flex flex-col gap-1">
       {modes.map(({ id, icon: Icon, label, shortcut }) => (
         <button
           key={id}
           onClick={() => setCanvasMode(id)}
           className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 relative group ${
             canvasMode === id
-              ? 'bg-primary-container/40 text-primary shadow-glow-primary'
+              ? 'bg-primary text-on-primary shadow-glow-primary'
               : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container/60'
           }`}
           title={`${label} (${shortcut})`}

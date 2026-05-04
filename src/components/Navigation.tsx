@@ -1,40 +1,49 @@
-import { NavLink } from 'react-router-dom'
-import { Sparkles, Archive, FileText } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
+import { Hand, MousePointer2, SquareDashedMousePointer, Target } from 'lucide-react'
+import { useBubbleStore } from '@/stores/bubbleStore'
 
-const navItems = [
-  { to: '/', icon: Sparkles, label: '灵感气泡' },
-  { to: '/context', icon: Archive, label: '快照库' },
-  { to: '/prd', icon: FileText, label: 'PRD' },
+const toolItems = [
+  { id: 'pan' as const, icon: Hand, label: '拖拽', shortcut: 'V' },
+  { id: 'edit' as const, icon: MousePointer2, label: '编辑', shortcut: 'E' },
+  { id: 'select' as const, icon: SquareDashedMousePointer, label: '选区', shortcut: 'S' },
 ]
 
 export default function Navigation() {
-  return (
-    <nav className="fixed left-0 top-0 bottom-0 w-16 bg-surface-bright/10 backdrop-blur-xl border-r border-white/50 z-50 flex flex-col items-center py-6"
-      style={{ boxShadow: '8px 0 32px rgba(170,240,209,0.05)' }}>
-      <div className="mb-8">
-        <div className="w-10 h-10 rounded-glass bg-gradient-to-br from-primary-container to-primary flex items-center justify-center"
-          style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 12px rgba(36,106,82,0.15)' }}>
-          <span className="text-on-primary font-bold text-lg font-serif">C</span>
-        </div>
-      </div>
+  const location = useLocation()
+  const { canvasMode, setCanvasMode, setViewport } = useBubbleStore()
 
-      <div className="flex-1 flex flex-col items-center gap-2">
-        {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `w-12 h-12 rounded-glass flex flex-col items-center justify-center gap-0.5 transition-all duration-500 ${
-                isActive
-                  ? 'glass-panel-mint text-primary shadow-glass-mint'
-                  : 'text-on-surface-variant hover:text-primary hover:scale-105'
-              }`
-            }
+  if (location.pathname !== '/') return null
+
+  return (
+    <nav className="fixed left-1/2 top-6 z-50 -translate-x-1/2 glass-panel floating-window !rounded-full p-1.5">
+      <div className="flex items-center gap-1">
+        {toolItems.map(({ id, icon: Icon, label, shortcut }) => (
+          <button
+            key={id}
+            onClick={() => setCanvasMode(id)}
+            className={`h-10 w-10 rounded-full flex items-center justify-center transition-all duration-300 relative group ${
+              canvasMode === id
+                ? 'bg-primary text-on-primary shadow-glow-primary'
+                : 'text-on-surface-variant hover:text-primary hover:bg-primary-fixed/40'
+            }`}
+            title={`${label} (${shortcut})`}
           >
-            <Icon size={18} />
-            <span className="text-[9px] font-semibold tracking-wider">{label}</span>
-          </NavLink>
+            <Icon size={17} />
+            <span className="absolute top-full mt-3 px-2 py-1 rounded-lg bg-inverse-surface text-inverse-on-surface text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              {label} ({shortcut})
+            </span>
+          </button>
         ))}
+        <button
+          onClick={() => setViewport({ x: 0, y: 0, zoom: 1 })}
+          className="h-10 w-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed/40 transition-all relative group"
+          title="重置视角"
+        >
+          <Target size={17} />
+          <span className="absolute top-full mt-3 px-2 py-1 rounded-lg bg-inverse-surface text-inverse-on-surface text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            重置视角
+          </span>
+        </button>
       </div>
     </nav>
   )

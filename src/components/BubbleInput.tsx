@@ -32,6 +32,7 @@ export default function BubbleInput() {
   const [text, setText] = useState('')
   const [isListening, setIsListening] = useState(false)
   const addBubble = useBubbleStore((s) => s.addBubble)
+  const selectBubble = useBubbleStore((s) => s.selectBubble)
   const bubbles = useBubbleStore((s) => s.bubbles)
   const { followUp } = useAiStore()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -60,6 +61,7 @@ export default function BubbleInput() {
         if (event.results[0].isFinal) {
           if (transcript.trim()) {
             const id = addBubble(transcript.trim())
+            selectBubble(id)
             triggerFollowUpRef.current?.(id, transcript.trim())
           }
           setText('')
@@ -71,11 +73,12 @@ export default function BubbleInput() {
       recognition.onend = () => setIsListening(false)
       recognitionRef.current = recognition
     }
-  }, [addBubble, bubbles])
+  }, [addBubble, bubbles, selectBubble])
 
   const handleSubmit = () => {
     if (!text.trim()) return
     const id = addBubble(text.trim())
+    selectBubble(id)
     triggerFollowUpRef.current?.(id, text.trim())
     setText('')
     inputRef.current?.focus()
@@ -93,7 +96,17 @@ export default function BubbleInput() {
   }
 
   return (
-    <div className="flex items-center gap-3 px-6 py-4 bg-surface-bright/10 backdrop-blur-xl border-b border-white/40">
+    <div className="flex items-center gap-4 px-4 py-4">
+      <div className="hidden lg:flex items-center gap-3 w-64 shrink-0">
+        <div className="h-12 w-12 overflow-hidden rounded-full bg-white/70 ring-1 ring-white/70 shadow-glass">
+          <img src="/hermit-crab-mascot.png" alt="Aethel mascot" className="h-full w-full object-cover" />
+        </div>
+        <div>
+          <div className="text-[15px] font-serif font-semibold text-on-surface">Aethel</div>
+          <div className="text-[11px] text-on-surface-variant">产品构思工作台</div>
+        </div>
+      </div>
+
       <div className="flex-1 relative">
         <input
           ref={inputRef}
@@ -102,12 +115,12 @@ export default function BubbleInput() {
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           placeholder="输入灵感，回车生成气泡..."
-          className="w-full input-field pr-10"
+          className="w-full input-field h-14 rounded-full pr-12 text-[15px]"
         />
         {text && (
           <button
             onClick={handleSubmit}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-primary hover:text-primary-fixed-dim transition-colors"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-primary hover:text-primary-fixed-dim transition-colors"
           >
             <Send size={16} />
           </button>
@@ -116,18 +129,18 @@ export default function BubbleInput() {
 
       <button
         onClick={toggleVoice}
-        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+        className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
           isListening
             ? 'bg-error-container/60 text-error backdrop-blur-md border border-error/30 animate-breathe'
-            : 'btn-glass w-10 h-10 !p-0 flex items-center justify-center'
+            : 'btn-glass w-12 h-12 !p-0 flex items-center justify-center'
         }`}
       >
         {isListening ? <MicOff size={18} /> : <Mic size={18} />}
       </button>
 
-      <button onClick={handleSubmit} className="btn-liquid flex items-center gap-2">
+      <button onClick={handleSubmit} className="btn-liquid h-12 flex items-center gap-2 px-5 sm:px-7">
         <Plus size={16} />
-        气泡
+        <span className="hidden sm:inline">气泡</span>
       </button>
     </div>
   )

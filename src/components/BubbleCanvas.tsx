@@ -78,26 +78,21 @@ export default function BubbleCanvas() {
     canvas.height = canvasSize.h * dpr
     ctx.scale(dpr, dpr)
 
-    ctx.fillStyle = '#fbf9f8'
+    ctx.fillStyle = '#fff8f6'
     ctx.fillRect(0, 0, canvasSize.w, canvasSize.h)
 
-    // 绘制网格
-    ctx.strokeStyle = '#e4e2e1'
-    ctx.lineWidth = 1
-    const gridSize = 40 * viewport.zoom
-    const offsetX = (-viewport.x * viewport.zoom + canvasSize.w / 2) % gridSize
-    const offsetY = (-viewport.y * viewport.zoom + canvasSize.h / 2) % gridSize
-    for (let x = offsetX; x < canvasSize.w; x += gridSize) {
-      ctx.beginPath()
-      ctx.moveTo(x, 0)
-      ctx.lineTo(x, canvasSize.h)
-      ctx.stroke()
-    }
-    for (let y = offsetY; y < canvasSize.h; y += gridSize) {
-      ctx.beginPath()
-      ctx.moveTo(0, y)
-      ctx.lineTo(canvasSize.w, y)
-      ctx.stroke()
+    // 绘制点状工作区背景
+    ctx.fillStyle = 'rgba(142, 112, 106, 0.2)'
+    const dotSize = Math.max(0.7, 1.15 * viewport.zoom)
+    const dotGap = 18 * viewport.zoom
+    const offsetX = (-viewport.x * viewport.zoom + canvasSize.w / 2) % dotGap
+    const offsetY = (-viewport.y * viewport.zoom + canvasSize.h / 2) % dotGap
+    for (let x = offsetX; x < canvasSize.w; x += dotGap) {
+      for (let y = offsetY; y < canvasSize.h; y += dotGap) {
+        ctx.beginPath()
+        ctx.arc(x, y, dotSize, 0, Math.PI * 2)
+        ctx.fill()
+      }
     }
 
     // 绘制关系线
@@ -111,7 +106,7 @@ export default function BubbleCanvas() {
 
       ctx.beginPath()
       ctx.setLineDash([6, 4])
-      ctx.strokeStyle = rel.type === 'contradictory' ? 'rgba(186, 26, 26, 0.4)' : rel.type === 'duplicate' ? 'rgba(121, 89, 0, 0.4)' : 'rgba(36, 106, 82, 0.3)'
+      ctx.strokeStyle = rel.type === 'contradictory' ? 'rgba(186, 26, 26, 0.42)' : rel.type === 'duplicate' ? 'rgba(92, 89, 119, 0.4)' : 'rgba(62, 102, 89, 0.36)'
       ctx.lineWidth = 2
       ctx.moveTo(sp.x, sp.y)
       ctx.lineTo(tp.x, tp.y)
@@ -135,10 +130,35 @@ export default function BubbleCanvas() {
 
       const fontSize = 13 * viewport.zoom
       ctx.font = `${fontSize}px "Inter", "Noto Sans SC", sans-serif`
-      const textWidth = ctx.measureText(bubble.content).width
       const padding = 16 * viewport.zoom
-      const bubbleWidth = Math.max(textWidth + padding * 2, 80 * viewport.zoom)
-      let bubbleHeight = 40 * viewport.zoom
+      const maxBubbleWidth = 360 * viewport.zoom
+      const minBubbleWidth = 164 * viewport.zoom
+      const maxTextWidth = maxBubbleWidth - padding * 2
+      const textLines: string[] = []
+      let currentLine = ''
+      const chars = Array.from(bubble.content)
+      for (const char of chars) {
+        const nextLine = currentLine + char
+        if (ctx.measureText(nextLine).width <= maxTextWidth || currentLine.length === 0) {
+          currentLine = nextLine
+        } else {
+          textLines.push(currentLine)
+          currentLine = char
+        }
+        if (textLines.length === 2) break
+      }
+      if (textLines.length < 2 && currentLine) textLines.push(currentLine)
+      const consumedLength = textLines.join('').length
+      if (consumedLength < chars.length && textLines.length > 0) {
+        let lastLine = textLines[textLines.length - 1]
+        while (ctx.measureText(`${lastLine}...`).width > maxTextWidth && lastLine.length > 0) {
+          lastLine = lastLine.slice(0, -1)
+        }
+        textLines[textLines.length - 1] = `${lastLine}...`
+      }
+      const widestLine = Math.max(...textLines.map((line) => ctx.measureText(line).width), minBubbleWidth - padding * 2)
+      const bubbleWidth = Math.min(Math.max(widestLine + padding * 2, minBubbleWidth), maxBubbleWidth)
+      let bubbleHeight = (textLines.length > 1 ? 58 : 42) * viewport.zoom
 
       if (bubbleExts.length > 0) {
         bubbleHeight += bubbleExts.length * 14 * viewport.zoom + 4 * viewport.zoom
@@ -147,7 +167,7 @@ export default function BubbleCanvas() {
       const radius = 16 * viewport.zoom
 
       if (isSelected || isDragging || isInSelection) {
-        ctx.shadowColor = 'rgba(36, 106, 82, 0.3)'
+        ctx.shadowColor = 'rgba(176, 46, 16, 0.22)'
         ctx.shadowBlur = 25
       }
 
@@ -167,16 +187,16 @@ export default function BubbleCanvas() {
       ctx.closePath()
 
       const gradient = ctx.createLinearGradient(-bubbleWidth / 2, 0, bubbleWidth / 2, 0)
-      gradient.addColorStop(0, '#ffffff')
-      gradient.addColorStop(1, '#f0faf5')
+      gradient.addColorStop(0, 'rgba(255, 255, 255, 0.94)')
+      gradient.addColorStop(1, 'rgba(255, 240, 237, 0.9)')
       ctx.fillStyle = gradient
       ctx.fill()
 
       if (isInSelection) {
-        ctx.strokeStyle = '#246a52'
+        ctx.strokeStyle = '#ad2c0d'
         ctx.lineWidth = 3
       } else {
-        ctx.strokeStyle = isSelected ? '#246a52' : 'rgba(36, 106, 82, 0.6)'
+        ctx.strokeStyle = isSelected ? '#ad2c0d' : 'rgba(62, 102, 89, 0.52)'
         ctx.lineWidth = isSelected ? 3 : 1.5
       }
       ctx.stroke()
@@ -184,19 +204,14 @@ export default function BubbleCanvas() {
       ctx.shadowColor = 'transparent'
       ctx.shadowBlur = 0
 
-      ctx.fillStyle = '#1b1c1c'
+      ctx.fillStyle = '#261815'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
 
-      const maxTextWidth = bubbleWidth - padding
-      let displayText = bubble.content
-      if (ctx.measureText(displayText).width > maxTextWidth) {
-        while (ctx.measureText(displayText + '...').width > maxTextWidth && displayText.length > 0) {
-          displayText = displayText.slice(0, -1)
-        }
-        displayText += '...'
-      }
-      ctx.fillText(displayText, 0, -bubbleHeight / 2 + 20 * viewport.zoom)
+      const firstLineY = textLines.length > 1 ? -bubbleHeight / 2 + 20 * viewport.zoom : 0
+      textLines.forEach((line, index) => {
+        ctx.fillText(line, 0, firstLineY + index * 18 * viewport.zoom)
+      })
 
       if (bubble.tag) {
         const tagFontSize = 9 * viewport.zoom
@@ -219,10 +234,10 @@ export default function BubbleCanvas() {
         ctx.quadraticCurveTo(tagX, tagY, tagX + tr, tagY)
         ctx.closePath()
         
-        ctx.fillStyle = 'rgba(170, 240, 209, 0.3)'
+        ctx.fillStyle = 'rgba(192, 236, 220, 0.42)'
         ctx.fill()
 
-        ctx.fillStyle = '#246a52'
+        ctx.fillStyle = '#3e6659'
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.fillText(bubble.tag, 0, tagY + tagHeight / 2)
@@ -231,9 +246,9 @@ export default function BubbleCanvas() {
       if (bubbleExts.length > 0) {
         const extFontSize = 10 * viewport.zoom
         ctx.font = `${extFontSize}px "Inter", sans-serif`
-        ctx.fillStyle = '#6f7973'
+        ctx.fillStyle = '#8e706a'
         ctx.textAlign = 'left'
-        const extStartY = -bubbleHeight / 2 + 36 * viewport.zoom
+        const extStartY = -bubbleHeight / 2 + (textLines.length > 1 ? 56 : 36) * viewport.zoom
         bubbleExts.forEach((ext, idx) => {
           let extText = ext.content
           const maxExtWidth = bubbleWidth - padding * 1.5
@@ -258,9 +273,9 @@ export default function BubbleCanvas() {
 
       ctx.beginPath()
       ctx.rect(sx, sy, sw, sh)
-      ctx.fillStyle = 'rgba(170, 240, 209, 0.1)'
+      ctx.fillStyle = 'rgba(255, 180, 163, 0.12)'
       ctx.fill()
-      ctx.strokeStyle = 'rgba(36, 106, 82, 0.4)'
+      ctx.strokeStyle = 'rgba(176, 46, 16, 0.42)'
       ctx.lineWidth = 1
       ctx.setLineDash([4, 4])
       ctx.stroke()
@@ -286,8 +301,8 @@ export default function BubbleCanvas() {
         ctx.font = `${fontSize}px "Inter", "Noto Sans SC", sans-serif`
         const textWidth = ctx.measureText(b.content).width
         const padding = 16
-        const bw = Math.max(textWidth + padding * 2, 80) / 2
-        const bh = 20
+        const bw = Math.min(Math.max(textWidth + padding * 2, 164), 360) / 2
+        const bh = 42
 
         if (Math.abs(world.x - b.x) < bw && Math.abs(world.y - b.y) < bh) {
           return b
@@ -304,6 +319,13 @@ export default function BubbleCanvas() {
     const sx = e.clientX - rect.left
     const sy = e.clientY - rect.top
 
+    const bubbleUnderPointer = findBubbleAt(sx, sy)
+
+    if (canvasMode === 'pan' && bubbleUnderPointer) {
+      selectBubble(bubbleUnderPointer.id)
+      return
+    }
+
     if (canvasMode === 'pan') {
       setPanning(true)
       setPanStart({ x: e.clientX, y: e.clientY })
@@ -311,7 +333,7 @@ export default function BubbleCanvas() {
     }
 
     if (canvasMode === 'edit') {
-      const bubble = findBubbleAt(sx, sy)
+      const bubble = bubbleUnderPointer
       if (bubble) {
         selectBubble(bubble.id)
         setDragging(bubble.id)
@@ -322,7 +344,7 @@ export default function BubbleCanvas() {
     }
 
     if (canvasMode === 'select') {
-      const bubble = findBubbleAt(sx, sy)
+      const bubble = bubbleUnderPointer
       if (bubble) {
         setSelectedIds((prev) => {
           const next = new Set(prev)
