@@ -7,6 +7,9 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import aiRoutes from './routes/ai.js'
 import memoryRoutes from './routes/memory.js'
+import bubbleRoutes from './routes/bubbles.js'
+import snapshotRoutes from './routes/snapshots.js'
+import workspaceRoutes from './routes/workspace.js'
 
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -28,6 +31,9 @@ app.use(express.static(distPath))
 
 app.use('/api/ai', aiRoutes)
 app.use('/api/memory', memoryRoutes)
+app.use('/api/bubbles', bubbleRoutes)
+app.use('/api/snapshots', snapshotRoutes)
+app.use('/api/workspace', workspaceRoutes)
 
 app.use(
   '/api/health',

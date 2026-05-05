@@ -1,0 +1,138 @@
+{
+  "categories": [
+    {
+      "id": "mos8sfw9l45exrnq",
+      "name": "产品核心功能",
+      "description": "关于小程序核心报事功能的设计，包括拍照上报和自动派单机制",
+      "color": "#4ECDC4",
+      "confidence": 0.85
+    },
+    {
+      "id": "mos8sfw9iidcc82mi",
+      "name": "政务合规与限制",
+      "description": "涉及政务项目的数据安全、隐私保护和合规性约束",
+      "color": "#FF6B6B",
+      "confidence": 0.9
+    },
+    {
+      "id": "mos8sfw9928y96az3",
+      "name": "技术实现方案",
+      "description": "关于AI识别、算力成本等技术可行性的探索",
+      "color": "#45B7D1",
+      "confidence": 0.88
+    },
+    {
+      "id": "mos8sfw9ittnqjga5",
+      "name": "差异化定位",
+      "description": "与竞品的对比分析及产品独特价值主张",
+      "color": "#96CEB4",
+      "confidence": 0.92
+    }
+  ],
+  "relations": [
+    {
+      "id": "mos8sfwav5hnuijbf",
+      "sourceId": "mos8qzejpczkowctp",
+      "targetId": "mos8nw5758btddodu",
+      "type": "related",
+      "reason": "AI自动分类可优化快递小哥的报事体验，减少操作步骤"
+    },
+    {
+      "id": "mos8sfwafueevazl2",
+      "sourceId": "mos8rfz5jbfiojkxa",
+      "targetId": "mos8nw5758btddodu",
+      "type": "related",
+      "reason": "新就业群体专属定位直接支撑免费小程序的价值主张，为街道办提供合作理由"
+    },
+    {
+      "id": "mos8sfwahunalp98t",
+      "sourceId": "mos8p1nv8vkvfypw4",
+      "targetId": "mos8rfz5jbfiojkxa",
+      "type": "related",
+      "reason": "派单机制需要骑手身份认证支撑，差异点设计影响功能实现方式"
+    }
+  ],
+  "extensions": [
+    {
+      "id": "mos8o7wnmb7dghxat",
+      "bubbleId": "mos8nw5758btddodu",
+      "content": "谁来承担开发和维护成本？：街道办说'免费'但长期运维需要投入，考虑政府申请预算、第三方赞助、还是轻量化方案降低维护成本？",
+      "source": "ai_followup",
+      "createdAt": "2026-05-05T06:20:06.023Z"
+    },
+    {
+      "id": "mos8pg3t9gscyv9hr",
+      "bubbleId": "mos8p1nv8vkvfypw4",
+      "content": "先解决'谁有空'——派单前看网格员当前任务量：即使知道是谁的责任区，也可能在忙其他事，需要显示忙闲状态或任务队列",
+      "source": "ai_followup",
+      "createdAt": "2026-05-05T06:21:03.305Z"
+    },
+    {
+      "id": "mos8r68dw6r78kqyp",
+      "bubbleId": "mos8qzejpczkowctp",
+      "content": "把AI做成增值功能而非刚需：基础版手动选分类，AI识别作为'智能建议'供参考，街道办若后续有预算可升级",
+      "source": "ai_followup",
+      "createdAt": "2026-05-05T06:22:23.821Z"
+    },
+    {
+      "id": "mos8rt6puaon25glo",
+      "bubbleId": "mos8rfz5jbfiojkxa",
+      "content": "专属激励机制设计：积分换什么？优先派单权、社区服务时长、还是实物奖励？谁来承担激励成本——街道办、平台方、还是三方共建？",
+      "source": "ai_followup",
+      "createdAt": "2026-05-05T06:22:53.569Z"
+    },
+    {
+      "id": "mos8thjzn3ywa1cfw",
+      "bubbleId": "mos8p1nv8vkvfypw4",
+      "content": "合并说明：将5、6合并，保留核心矛盾（外卖模式不可行）并引出解决方向：用网格静态责任区替代实时位置，既合规又能派单",
+      "source": "ai_followup",
+      "createdAt": "2026-05-05T06:24:11.807Z"
+    }
+  ],
+  "viewport": {
+    "x": -169.8354092608159,
+    "y": -382.802012498909,
+    "zoom": 0.6449066929133859
+  },
+  "filterTag": null,
+  "canvasMode": "pan",
+  "bubbleLayout": {
+    "mos8nw5758btddodu": {
+      "x": 4.2740173290242624e-14,
+      "y": -698,
+      "color": "#4ECDC4",
+      "categoryId": "mos8sfw9l45exrnq",
+      "tag": "功能设计",
+      "interactionWeight": 4,
+      "updatedAt": "2026-05-05T06:23:23.002Z"
+    },
+    "mos8p1nv8vkvfypw4": {
+      "x": -383.8198530825736,
+      "y": -692.1490888934065,
+      "color": "#4ECDC4",
+      "categoryId": "mos8sfw9l45exrnq",
+      "tag": "功能设计",
+      "interactionWeight": 6,
+      "updatedAt": "2026-05-05T06:24:34.373Z"
+    },
+    "mos8qzejpczkowctp": {
+      "x": -0.8187108798622944,
+      "y": -158.73859125076393,
+      "color": "#45B7D1",
+      "categoryId": "mos8sfw9928y96az3",
+      "tag": "技术方案",
+      "interactionWeight": 4,
+      "updatedAt": "2026-05-05T06:24:25.357Z"
+    },
+    "mos8rfz5jbfiojkxa": {
+      "x": -495.46391072870813,
+      "y": -382.0267065430329,
+      "color": "#96CEB4",
+      "categoryId": "mos8sfw9ittnqjga5",
+      "tag": "产品定位",
+      "interactionWeight": 2,
+      "updatedAt": "2026-05-05T06:24:27.090Z"
+    }
+  },
+  "updatedAt": "2026-05-05T06:40:36.738Z"
+}

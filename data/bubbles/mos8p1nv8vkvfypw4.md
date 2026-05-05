@@ -1,0 +1,55 @@
+---
+id: "mos8p1nv8vkvfypw4"
+title: "5. #灵光一闪→#方案受阻 外卖式实时派单不可行：①网格员无\"最近\"概念 ②实时位置涉隐私，街"
+tag: "功能设计"
+categoryId: "mos8sfw9l45exrnq"
+color: "#4ECDC4"
+interactionWeight: 6
+createdAt: "2026-05-05T06:20:44.587Z"
+updatedAt: "2026-05-05T06:24:34.373Z"
+extensions: [{"id":"mos8pg3t9gscyv9hr","bubbleId":"mos8p1nv8vkvfypw4","content":"先解决'谁有空'——派单前看网格员当前任务量：即使知道是谁的责任区，也可能在忙其他事，需要显示忙闲状态或任务队列","source":"ai_followup","createdAt":"2026-05-05T06:21:03.305Z"},{"id":"mos8thjzn3ywa1cfw","bubbleId":"mos8p1nv8vkvfypw4","content":"合并说明：将5、6合并，保留核心矛盾（外卖模式不可行）并引出解决方向：用网格静态责任区替代实时位置，既合规又能派单","source":"ai_followup","createdAt":"2026-05-05T06:24:11.807Z"}]
+---
+
+# Bubble
+
+5. #灵光一闪→#方案受阻 外卖式实时派单不可行：①网格员无"最近"概念 ②实时位置涉隐私，街道办明确禁止。替代思路：放弃实时位置，改用网格静态责任区——按拍照地点匹配负责该区域的网格员，无需追踪个人位置
+
+## Follow-up Extensions
+
+- ai_followup: 先解决'谁有空'——派单前看网格员当前任务量：即使知道是谁的责任区，也可能在忙其他事，需要显示忙闲状态或任务队列
+- ai_followup: 合并说明：将5、6合并，保留核心矛盾（外卖模式不可行）并引出解决方向：用网格静态责任区替代实时位置，既合规又能派单
+
+## Aethel Bubble Payload
+
+```json aethel-bubble
+{
+  "bubble": {
+    "id": "mos8p1nv8vkvfypw4",
+    "content": "5. #灵光一闪→#方案受阻 外卖式实时派单不可行：①网格员无\"最近\"概念 ②实时位置涉隐私，街道办明确禁止。替代思路：放弃实时位置，改用网格静态责任区——按拍照地点匹配负责该区域的网格员，无需追踪个人位置",
+    "tag": "功能设计",
+    "color": "#4ECDC4",
+    "categoryId": "mos8sfw9l45exrnq",
+    "x": -383.8198530825736,
+    "y": -692.1490888934065,
+    "interactionWeight": 6,
+    "createdAt": "2026-05-05T06:20:44.587Z",
+    "updatedAt": "2026-05-05T06:24:34.373Z"
+  },
+  "extensions": [
+    {
+      "id": "mos8pg3t9gscyv9hr",
+      "bubbleId": "mos8p1nv8vkvfypw4",
+      "content": "先解决'谁有空'——派单前看网格员当前任务量：即使知道是谁的责任区，也可能在忙其他事，需要显示忙闲状态或任务队列",
+      "source": "ai_followup",
+      "createdAt": "2026-05-05T06:21:03.305Z"
+    },
+    {
+      "id": "mos8thjzn3ywa1cfw",
+      "bubbleId": "mos8p1nv8vkvfypw4",
+      "content": "合并说明：将5、6合并，保留核心矛盾（外卖模式不可行）并引出解决方向：用网格静态责任区替代实时位置，既合规又能派单",
+      "source": "ai_followup",
+      "createdAt": "2026-05-05T06:24:11.807Z"
+    }
+  ]
+}
+```

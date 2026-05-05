@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Brain, History, Tags } from 'lucide-react'
 import BubbleCanvas from '@/components/BubbleCanvas'
 import TagSidebar from '@/components/TagSidebar'
@@ -11,10 +11,11 @@ import { useSnapshotStore } from '@/stores/snapshotStore'
 
 export default function BubbleSpace() {
   const [activePanel, setActivePanel] = useState<'tags' | 'ai' | 'snapshot' | null>(null)
-  const [snapshotSelectionIds, setSnapshotSelectionIds] = useState<string[]>([])
-  const selectedBubbleId = useBubbleStore((s) => s.selectedBubbleId)
-  const selectBubble = useBubbleStore((s) => s.selectBubble)
+  const activeBubbleId = useBubbleStore((s) => s.activeBubbleId)
+  const selectedBubbleIds = useBubbleStore((s) => s.selectedBubbleIds)
   const canvasMode = useBubbleStore((s) => s.canvasMode)
+  const removeSelectedBubble = useBubbleStore((s) => s.removeSelectedBubble)
+  const clearSelectedBubbles = useBubbleStore((s) => s.clearSelectedBubbles)
   const categoryColorSignature = useBubbleStore((s) => s.categories.map((category) => `${category.id}:${category.color}`).join('|'))
   const ensureDistinctCategoryColors = useBubbleStore((s) => s.ensureDistinctCategoryColors)
   const latestSnapshot = useSnapshotStore((s) => s.snapshots[0])
@@ -29,27 +30,11 @@ export default function BubbleSpace() {
     ensureDistinctCategoryColors()
   }, [categoryColorSignature, ensureDistinctCategoryColors])
 
-  const handleCanvasSelectionChange = useCallback((ids: string[]) => {
-    setSnapshotSelectionIds(ids)
-    if (ids.length > 0 && canvasMode === 'select') {
+  useEffect(() => {
+    if (selectedBubbleIds.length > 0 && canvasMode === 'select') {
       setActivePanel('snapshot')
     }
-  }, [canvasMode])
-
-  const handleRemoveSelectedBubble = useCallback((id: string) => {
-    setSnapshotSelectionIds((ids) => {
-      const nextIds = ids.filter((selectedId) => selectedId !== id)
-      if (selectedBubbleId === id) {
-        selectBubble(nextIds[0] || null)
-      }
-      return nextIds
-    })
-  }, [selectBubble, selectedBubbleId])
-
-  const handleClearSelectedBubbles = useCallback(() => {
-    setSnapshotSelectionIds([])
-    selectBubble(null)
-  }, [selectBubble])
+  }, [canvasMode, selectedBubbleIds.length])
 
   return (
     <div className="h-screen flex flex-col bg-background dot-grid-bg relative overflow-hidden">
@@ -59,10 +44,7 @@ export default function BubbleSpace() {
 
       <div className="relative z-10 h-full">
         <div className="absolute inset-0 overflow-hidden">
-          <BubbleCanvas
-            selectedBubbleIds={snapshotSelectionIds}
-            onSelectionChange={handleCanvasSelectionChange}
-          />
+          <BubbleCanvas />
 
           <div className="absolute right-6 top-5 z-30 glass-panel floating-window !rounded-full flex items-center gap-0.5 p-1">
             {panelButtons.map(({ id, icon: Icon, label }) => (
@@ -95,17 +77,16 @@ export default function BubbleSpace() {
                 <SnapshotPanel
                   embedded
                   contained
-                  selectedBubbleIds={snapshotSelectionIds}
+                  selectedBubbleIds={selectedBubbleIds}
                   onClose={() => setActivePanel(null)}
                 />
               )}
             </div>
           )}
-          {selectedBubbleId && <BubbleDetail />}
+          {activeBubbleId && <BubbleDetail />}
           <BubbleAIAssistant
-            selectedBubbleIds={snapshotSelectionIds}
-            onRemoveSelectedBubble={handleRemoveSelectedBubble}
-            onClearSelectedBubbles={handleClearSelectedBubbles}
+            onRemoveSelectedBubble={removeSelectedBubble}
+            onClearSelectedBubbles={clearSelectedBubbles}
           />
         </div>
       </div>

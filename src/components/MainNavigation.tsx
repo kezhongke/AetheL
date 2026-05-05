@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
-import { Archive, FileText, Sparkles } from 'lucide-react'
+import { AlertCircle, Archive, CheckCircle2, FileText, Loader2, Sparkles } from 'lucide-react'
+import { usePersistenceStore } from '@/stores/persistenceStore'
 
 const navItems = [
   { to: '/', icon: Sparkles, label: '灵感气泡' },
@@ -8,6 +9,19 @@ const navItems = [
 ]
 
 export default function MainNavigation() {
+  const { status, error, lastSavedAt } = usePersistenceStore()
+  const isBusy = status === 'loading' || status === 'saving'
+  const StatusIcon = status === 'error' ? AlertCircle : isBusy ? Loader2 : CheckCircle2
+  const statusLabel = status === 'error'
+    ? error || '保存失败'
+    : status === 'loading'
+      ? '正在加载文件层'
+      : status === 'saving'
+        ? '正在保存'
+        : lastSavedAt
+          ? `已保存 ${new Date(lastSavedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`
+          : '已连接文件层'
+
   return (
     <nav className="fixed left-6 top-5 z-50 floating-window rounded-full p-1 flex items-center gap-0.5">
       <div className="mr-1 h-8 w-8 overflow-hidden rounded-full bg-white/75 ring-1 ring-white/75 shadow-glass">
@@ -29,6 +43,19 @@ export default function MainNavigation() {
           <span className="text-[11px] font-semibold">{label}</span>
         </NavLink>
       ))}
+      <span className="mx-1 h-4 w-px bg-white/45" />
+      <span
+        className={`flex h-8 w-8 items-center justify-center rounded-full ${
+          status === 'error'
+            ? 'text-error bg-error-container/30'
+            : isBusy
+              ? 'text-primary bg-primary-fixed/30'
+              : 'text-primary bg-white/24'
+        }`}
+        title={statusLabel}
+      >
+        <StatusIcon size={14} className={isBusy ? 'animate-spin' : ''} />
+      </span>
     </nav>
   )
 }

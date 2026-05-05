@@ -29,6 +29,9 @@ export default defineConfig(({ mode }) => {
       tsconfigPaths(),
     ],
     server: {
+      watch: {
+        ignored: ['**/data/**'],
+      },
       proxy: {
         '/api': {
           target: apiTarget,

@@ -38,6 +38,15 @@ export interface BubbleExtension {
   createdAt: string
 }
 
+export interface BubbleRevision {
+  id: string
+  bubbleId: string
+  type: 'content' | 'tag' | 'color' | 'category'
+  before: string
+  after: string
+  createdAt: string
+}
+
 const TAG_COLORS = [
   '#4f46e5', '#0891b2', '#7c3aed', '#e11d48',
   '#d97706', '#0f766e', '#64748b', '#db2777',
@@ -133,7 +142,10 @@ interface BubbleState {
   categories: Category[]
   relations: BubbleRelation[]
   extensions: BubbleExtension[]
+  revisions: BubbleRevision[]
+  activeBubbleId: string | null
   selectedBubbleId: string | null
+  selectedBubbleIds: string[]
   filterTag: string | null
   viewport: { x: number; y: number; zoom: number }
   canvasMode: 'pan' | 'edit' | 'select'
@@ -142,7 +154,12 @@ interface BubbleState {
   updateBubble: (id: string, updates: Partial<Bubble>) => void
   deleteBubble: (id: string) => void
   moveBubble: (id: string, x: number, y: number) => void
+  setActiveBubble: (id: string | null, options?: { includeInSelection?: boolean }) => void
   selectBubble: (id: string | null) => void
+  setSelectedBubbleIds: (ids: string[]) => void
+  toggleSelectedBubble: (id: string) => void
+  removeSelectedBubble: (id: string) => void
+  clearSelectedBubbles: () => void
   incrementBubbleWeight: (id: string) => void
   setFilterTag: (tag: string | null) => void
   setViewport: (viewport: Partial<BubbleState['viewport']>) => void
@@ -169,7 +186,7 @@ interface BubbleState {
 
 type PersistedBubbleState = Pick<
   BubbleState,
-  'bubbles' | 'categories' | 'relations' | 'extensions' | 'filterTag' | 'viewport' | 'canvasMode'
+  'bubbles' | 'categories' | 'relations' | 'extensions' | 'revisions' | 'filterTag' | 'viewport' | 'canvasMode'
 >
 
 function migrateBubbleState(persistedState: unknown): PersistedBubbleState {
@@ -187,6 +204,7 @@ function migrateBubbleState(persistedState: unknown): PersistedBubbleState {
     categories: state.categories || [],
     relations: state.relations || [],
     extensions: state.extensions || [],
+    revisions: state.revisions || [],
     filterTag: state.filterTag || null,
     viewport: state.viewport || { x: 0, y: 0, zoom: 1 },
     canvasMode: state.canvasMode || 'pan',
@@ -198,7 +216,10 @@ export const useBubbleStore = create<BubbleState>()(persist((set, get) => ({
   categories: [],
   relations: [],
   extensions: [],
+  revisions: [],
+  activeBubbleId: null,
   selectedBubbleId: null,
+  selectedBubbleIds: [],
   filterTag: null,
   viewport: { x: 0, y: 0, zoom: 1 },
   canvasMode: 'pan',
@@ -236,6 +257,48 @@ export const useBubbleStore = create<BubbleState>()(persist((set, get) => ({
       const nextUpdates = inheritedTagColor ? { ...updates, color: inheritedTagColor } : updates
       const nextColor = nextUpdates.color
       const now = new Date().toISOString()
+      const revisions: BubbleRevision[] = [
+        updates.content !== undefined && updates.content !== target.content
+          ? {
+            id: generateId(),
+            bubbleId: id,
+            type: 'content',
+            before: target.content,
+            after: updates.content,
+            createdAt: now,
+          }
+          : null,
+        updates.tag !== undefined && updates.tag !== target.tag
+          ? {
+            id: generateId(),
+            bubbleId: id,
+            type: 'tag',
+            before: target.tag,
+            after: updates.tag,
+            createdAt: now,
+          }
+          : null,
+        updates.color !== undefined && updates.color !== target.color
+          ? {
+            id: generateId(),
+            bubbleId: id,
+            type: 'color',
+            before: target.color,
+            after: updates.color,
+            createdAt: now,
+          }
+          : null,
+        updates.categoryId !== undefined && updates.categoryId !== target.categoryId
+          ? {
+            id: generateId(),
+            bubbleId: id,
+            type: 'category',
+            before: target.categoryId,
+            after: updates.categoryId,
+            createdAt: now,
+          }
+          : null,
+      ].filter((revision): revision is BubbleRevision => Boolean(revision))
 
       const bubbles = state.bubbles.map((bubble) => {
         const isTarget = bubble.id === id
@@ -268,7 +331,7 @@ export const useBubbleStore = create<BubbleState>()(persist((set, get) => ({
         )
         : state.categories
 
-      return { bubbles, categories }
+      return { bubbles, categories, revisions: [...state.revisions, ...revisions] }
     })
   },
 
@@ -276,7 +339,11 @@ export const useBubbleStore = create<BubbleState>()(persist((set, get) => ({
     set((state) => ({
       bubbles: state.bubbles.filter((b) => b.id !== id),
       relations: state.relations.filter((r) => r.sourceId !== id && r.targetId !== id),
+      extensions: state.extensions.filter((e) => e.bubbleId !== id),
+      revisions: state.revisions.filter((revision) => revision.bubbleId !== id),
+      activeBubbleId: state.activeBubbleId === id ? null : state.activeBubbleId,
       selectedBubbleId: state.selectedBubbleId === id ? null : state.selectedBubbleId,
+      selectedBubbleIds: state.selectedBubbleIds.filter((selectedId) => selectedId !== id),
     }))
   },
 
@@ -288,18 +355,84 @@ export const useBubbleStore = create<BubbleState>()(persist((set, get) => ({
     }))
   },
 
-  selectBubble: (id) => {
+  setActiveBubble: (id, options = {}) => {
     if (!id) {
-      set({ selectedBubbleId: null })
+      set({ activeBubbleId: null, selectedBubbleId: null })
       return
     }
     set((state) => ({
+      activeBubbleId: id,
       selectedBubbleId: id,
+      selectedBubbleIds: options.includeInSelection === false
+        ? state.selectedBubbleIds
+        : state.selectedBubbleIds.includes(id)
+          ? state.selectedBubbleIds
+          : [id],
       bubbles: state.bubbles.map((b) =>
         b.id === id ? { ...b, interactionWeight: (b.interactionWeight || 0) + 1 } : b
       ),
     }))
   },
+
+  selectBubble: (id) => {
+    get().setActiveBubble(id)
+  },
+
+  setSelectedBubbleIds: (ids) => {
+    const nextIds = Array.from(new Set(ids)).filter((id) => get().bubbles.some((bubble) => bubble.id === id))
+    set((state) => {
+      const activeBubbleId = state.activeBubbleId && nextIds.includes(state.activeBubbleId)
+        ? state.activeBubbleId
+        : nextIds[0] || null
+      return {
+        selectedBubbleIds: nextIds,
+        activeBubbleId: activeBubbleId || null,
+        selectedBubbleId: activeBubbleId || null,
+      }
+    })
+  },
+
+  toggleSelectedBubble: (id) => {
+    set((state) => {
+      const selected = new Set(state.selectedBubbleIds)
+      if (selected.has(id)) selected.delete(id)
+      else selected.add(id)
+      const selectedBubbleIds = Array.from(selected)
+      const activeBubbleId = selected.has(id)
+        ? id
+        : state.activeBubbleId && selected.has(state.activeBubbleId)
+          ? state.activeBubbleId
+          : selectedBubbleIds[0] || null
+
+      return {
+        selectedBubbleIds,
+        activeBubbleId,
+        selectedBubbleId: activeBubbleId,
+        bubbles: selected.has(id)
+          ? state.bubbles.map((bubble) =>
+            bubble.id === id ? { ...bubble, interactionWeight: (bubble.interactionWeight || 0) + 1 } : bubble
+          )
+          : state.bubbles,
+      }
+    })
+  },
+
+  removeSelectedBubble: (id) => {
+    set((state) => {
+      const selectedBubbleIds = state.selectedBubbleIds.filter((selectedId) => selectedId !== id)
+      const activeBubbleId = state.activeBubbleId === id
+        ? selectedBubbleIds[0] || null
+        : state.activeBubbleId
+
+      return {
+        selectedBubbleIds,
+        activeBubbleId,
+        selectedBubbleId: activeBubbleId,
+      }
+    })
+  },
+
+  clearSelectedBubbles: () => set({ selectedBubbleIds: [], activeBubbleId: null, selectedBubbleId: null }),
 
   incrementBubbleWeight: (id) => {
     set((state) => ({
@@ -493,6 +626,7 @@ export const useBubbleStore = create<BubbleState>()(persist((set, get) => ({
     categories: state.categories,
     relations: state.relations,
     extensions: state.extensions,
+    revisions: state.revisions,
     filterTag: state.filterTag,
     viewport: state.viewport,
     canvasMode: state.canvasMode,

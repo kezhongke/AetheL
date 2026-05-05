@@ -7,7 +7,6 @@ import { useBubbleStore } from '@/stores/bubbleStore'
 type AssistantMode = 'add' | 'rewrite' | 'extend' | 'followup'
 
 interface BubbleAIAssistantProps {
-  selectedBubbleIds?: string[]
   onRemoveSelectedBubble?: (id: string) => void
   onClearSelectedBubbles?: () => void
 }
@@ -45,15 +44,15 @@ const modes: Array<{
 ]
 
 export default function BubbleAIAssistant({
-  selectedBubbleIds = [],
   onRemoveSelectedBubble,
   onClearSelectedBubbles,
 }: BubbleAIAssistantProps) {
   const {
     bubbles,
     relations,
-    selectedBubbleId,
-    selectBubble,
+    activeBubbleId,
+    selectedBubbleIds,
+    setActiveBubble,
     addBubble,
     updateBubble,
     addExtension,
@@ -63,8 +62,8 @@ export default function BubbleAIAssistant({
   const [instruction, setInstruction] = useState('')
 
   const selectedBubble = useMemo(
-    () => bubbles.find((item) => item.id === selectedBubbleId),
-    [bubbles, selectedBubbleId],
+    () => bubbles.find((item) => item.id === activeBubbleId),
+    [bubbles, activeBubbleId],
   )
   const selectedBubbles = useMemo(
     () => selectedBubbleIds
@@ -99,7 +98,7 @@ export default function BubbleAIAssistant({
     if (normalizedMode === 'add') {
       if (!value) return
       const id = addBubble(value)
-      selectBubble(id)
+      setActiveBubble(id)
       useAiStore.setState({ activeFollowUpBubbleId: id, activeFollowUpBubbleIds: [id] })
       await followUp(value, bubbles.map((item) => item.content))
       setInstruction('')
@@ -190,9 +189,7 @@ export default function BubbleAIAssistant({
                 </span>
                 {hasSelectedBubbles && (
                   <div className="relative min-w-0 flex-1">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-6 bg-gradient-to-r from-[#fff8f6] to-transparent" />
-                    <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-[#fff8f6] to-transparent" />
-                    <div className="scrollbar-none flex items-center gap-1 overflow-x-auto px-3">
+                    <div className="selected-bubble-strip scrollbar-none flex items-center gap-1 overflow-x-auto px-3">
                       {selectedBubbles.map((item) => (
                         <div
                           key={item.id}
@@ -205,7 +202,7 @@ export default function BubbleAIAssistant({
                         >
                           <button
                             type="button"
-                            onClick={() => selectBubble(item.id)}
+                            onClick={() => setActiveBubble(item.id, { includeInSelection: false })}
                             className="flex min-w-0 flex-1 items-center gap-1 text-left"
                           >
                             <span
@@ -242,7 +239,7 @@ export default function BubbleAIAssistant({
                       return
                     }
                     clearFollowUp()
-                    selectBubble(null)
+                    setActiveBubble(null)
                   }}
                   className="flex h-7 w-7 items-center justify-center rounded-full text-outline hover:bg-surface-container/70 hover:text-on-surface"
                   title={hasSelectedBubbles ? '清空全部选中气泡' : '关闭气泡 AI 输入'}
@@ -283,9 +280,8 @@ export default function BubbleAIAssistant({
                     if (event.key === 'Enter') handleSubmit()
                   }}
                   placeholder={placeholder}
-                  className="input-field h-12 w-full pr-[72px] text-[13px]"
+                  className="input-field h-12 w-full pr-[92px] text-[13px]"
                 />
-                <div className="pointer-events-none absolute right-10 top-1/2 h-9 w-16 -translate-y-1/2 bg-gradient-to-r from-white/0 via-white/70 to-white/95" />
                 <button
                   onClick={handleSubmit}
                   disabled={!canSubmit || isLoading}

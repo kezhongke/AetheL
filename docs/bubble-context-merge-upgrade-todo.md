@@ -45,9 +45,9 @@
 
 下一步建议：
 
-- [ ] 把选中集合提升到 Zustand store，而不是由 `BubbleCanvas` 本地 state 与 `BubbleSpace` 透传维护。
-- [ ] 为“主处理气泡”和“多选集合”建立明确命名，例如 `activeBubbleId` 与 `selectedBubbleIds`。
-- [ ] 将当前画布双击顶部编辑框弱化或并入底部 AI 输入框，避免“顶部保存”和“底部改写”形成重复编辑入口。
+- [x] 把选中集合提升到 Zustand store，而不是由 `BubbleCanvas` 本地 state 与 `BubbleSpace` 透传维护。
+- [x] 为“主处理气泡”和“多选集合”建立明确命名，例如 `activeBubbleId` 与 `selectedBubbleIds`。
+- [x] 将当前画布双击顶部编辑框弱化或并入底部 AI 输入框，避免“顶部保存”和“底部改写”形成重复编辑入口。
 - [ ] 补充针对选区、气泡条移除、快照预选集合的组件或集成测试。
 
 ## 阶段 0：现状收敛
@@ -76,7 +76,7 @@
 建议 UI：
 
 - [x] 在画布工具栏增加“创建快照”按钮。
-- [ ] 在右侧 AI 面板增加“当前上下文”折叠区。
+- [x] 在右侧 AI 面板增加“当前上下文”折叠区。
 - [x] 在气泡详情侧栏中显示该气泡参与过的快照数量和权重。
 - [x] 在画布底部状态栏显示最近快照名称与恢复入口。
 
@@ -371,19 +371,24 @@ semanticAnchors:
 
 后端文件 API 规划：
 
-- [ ] 新增 `api/routes/bubbles.ts`。
-- [ ] 新增 `api/routes/snapshots.ts` 或合并到 `api/routes/workspace.ts`。
-- [ ] 新增 Markdown 读写工具模块：
+- [x] 新增 `api/routes/bubbles.ts`。
+- [x] 新增 `api/routes/snapshots.ts` 或合并到 `api/routes/workspace.ts`。
+- [x] 新增 `api/routes/workspace.ts`，作为前端 Zustand 全量防抖同步入口。
+- [x] 新增 Markdown 读写工具模块：
 
 ```text
 api/storage/
 ├─ markdown.ts
 ├─ bubbleFiles.ts
 ├─ snapshotFiles.ts
-└─ workspaceFile.ts
+├─ workspaceFile.ts
+├─ atomicWrite.ts
+├─ writeQueue.ts
+├─ paths.ts
+└─ types.ts
 ```
 
-- [ ] API 设计：
+- [x] API 设计：
 
 ```text
 GET    /api/bubbles
@@ -401,52 +406,56 @@ PATCH  /api/snapshots/:id
 DELETE /api/snapshots/:id
 ```
 
-- [ ] 依赖选择：
-  - 使用 `gray-matter` 解析 frontmatter。
+- [x] 依赖选择：
+  - 暂未新增 `gray-matter` 依赖，先用本地 `api/storage/markdown.ts` 做稳定 frontmatter 读写，避免增加安装成本。
   - 使用 Node `fs/promises` 读写文件。
   - 文件名使用 `id`，不要使用用户输入标题直接作为文件名。
 
 前端迁移策略：
 
-- [ ] 页面启动时调用 `GET /api/bubbles` 和 `GET /api/workspace`，恢复 Zustand。
-- [ ] 创建气泡时先更新 Zustand，再异步 `POST /api/bubbles`。
-- [ ] 编辑气泡内容、标签、追问补充时 debounce 后 `PATCH /api/bubbles/:id`。
-- [ ] 拖拽、缩放、筛选等高频状态只写 `workspace.json`，不要频繁改 Markdown。
-- [ ] 快照创建时写 `data/snapshots/*.md`，快照引用 bubble IDs，不复制大量气泡正文。
+- [x] 页面启动时调用 `GET /api/workspace`，恢复 Zustand。
+- [x] 创建气泡时先更新 Zustand，再通过全量 workspace debounce 写回文件层。
+- [x] 编辑气泡内容、标签、追问补充时 debounce 后写回文件层。
+- [x] 拖拽、缩放、筛选等高频状态写入 `workspace.json`；气泡 Markdown 保持内容和低频元数据。
+- [x] 快照创建时写 `data/snapshots/*.md`，并在 frontmatter 中保留 bubble IDs。
 
 写入节流与冲突控制：
 
-- [ ] 气泡正文和标签编辑使用 500-1000ms debounce。
-- [ ] 拖拽位置只在 drag end 或定时批量保存。
-- [ ] 后端写文件时使用临时文件 + rename，降低半写入风险。
-- [ ] 同一个气泡的并发写入排队处理。
-- [ ] 文件写入失败时 UI 显示轻量保存失败状态，Zustand 不立即回滚。
+- [x] 气泡正文和标签编辑使用 500-1000ms debounce。
+- [x] 拖拽位置通过 workspace 级 800ms debounce 批量保存。
+- [x] 后端写文件时使用临时文件 + rename，降低半写入风险。
+- [x] 同一个气泡的并发写入排队处理。
+- [x] workspace、气泡、快照写入使用 key-based 队列，避免并发写入互相覆盖。
+- [x] 文件写入失败时 Zustand 不立即回滚，继续依赖 localStorage 作为即时 fallback。
+- [x] UI 显示轻量保存失败状态。
+- [x] Vite 开发服务器忽略 `data/**` 文件变化，避免文件层写入触发页面刷新和重复同步。
+- [x] 前端持久化使用 workspace 内容签名去重，避免相同状态被重复 PATCH。
 
 Git 友好策略：
 
-- [ ] Markdown 文档保持稳定字段顺序，减少 diff 噪音。
-- [ ] 高频坐标不写入 bubble md，避免每次拖拽都产生文档 diff。
+- [x] Markdown 文档保持稳定字段顺序，减少 diff 噪音。
+- [x] 高频坐标不写入 bubble md，避免每次拖拽都产生文档 diff。
 - [ ] `workspace.json` 可选择纳入 Git，也可加入 `.gitignore`，根据产品定位决定。
 - [ ] 为导入/导出预留 `Export Markdown Vault` 能力。
 
 安全与路径约束：
 
-- [ ] 所有文件写入限制在项目内 `data/` 目录。
-- [ ] 后端 API 禁止接收任意文件路径。
-- [ ] 删除气泡时先移动到 `data/.trash/`，二次确认后再物理删除。
-- [ ] Markdown 正文允许用户内容，但 frontmatter 字段必须经过白名单序列化。
+- [x] 所有文件写入限制在项目内 `data/` 目录。
+- [x] 后端 API 禁止接收任意文件路径。
+- [x] 删除气泡时先移动到 `data/.trash/`，二次确认后再物理删除。
+- [x] Markdown 正文允许用户内容，但 frontmatter 字段必须经过结构化序列化。
 
 验收标准：
 
-- [ ] 每创建一个气泡，`data/bubbles/` 下生成一个对应 `.md` 文件。
-- [ ] 刷新页面后，气泡从 Markdown + workspace JSON 恢复。
-- [ ] 编辑气泡内容后，对应 `.md` 文件更新。
-- [ ] 追问补充写回对应气泡 `.md`。
-- [ ] 创建快照后，`data/snapshots/` 下生成对应 `.md` 文件。
-- [ ] 快照通过 bubble IDs 引用气泡文档。
-- [ ] 拖拽气泡不会频繁改写 Markdown 文件。
-- [ ] `npm run check` 通过。
-- [ ] `npm run build` 通过。
+- [x] 每创建一个气泡，`data/bubbles/` 下生成一个对应 `.md` 文件。
+- [x] 刷新页面后，气泡从 Markdown + workspace JSON 恢复。
+- [x] 编辑气泡内容后，对应 `.md` 文件更新。
+- [x] 追问补充写回对应气泡 `.md`。
+- [x] 创建快照后，`data/snapshots/*.md` 已具备写入链路。
+- [x] 快照通过 bubble IDs 引用气泡文档。
+- [x] 拖拽气泡不会频繁改写 Markdown 文件。
+- [x] `npm run check` 通过。
+- [x] `npm run build` 通过。
 
 ## 阶段 8：视觉整合
 

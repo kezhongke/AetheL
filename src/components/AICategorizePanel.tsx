@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Brain, Check, X, Loader2, ChevronDown, ChevronUp, AlertTriangle, Link2, Copy } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Brain, Check, X, Loader2, ChevronDown, ChevronUp, AlertTriangle, Link2, Copy, Layers3 } from 'lucide-react'
 import { useBubbleStore } from '@/stores/bubbleStore'
 import { useAiStore } from '@/stores/aiStore'
 
@@ -14,9 +14,26 @@ interface AICategorizePanelProps {
 }
 
 export default function AICategorizePanel({ onClose }: AICategorizePanelProps) {
-  const { bubbles, categories, setCategoriesFromAI, setRelations } = useBubbleStore()
+  const { bubbles, categories, relations, extensions, activeBubbleId, selectedBubbleIds, setCategoriesFromAI, setRelations } = useBubbleStore()
   const { isLoading, categorizeResult, categorize, clearCategorizeResult } = useAiStore()
   const [isExpanded, setIsExpanded] = useState(true)
+  const [isContextExpanded, setIsContextExpanded] = useState(true)
+  const activeBubble = bubbles.find((bubble) => bubble.id === activeBubbleId)
+  const selectedBubbles = useMemo(() => (
+    selectedBubbleIds
+      .map((id) => bubbles.find((bubble) => bubble.id === id))
+      .filter((bubble): bubble is NonNullable<typeof bubble> => Boolean(bubble))
+  ), [bubbles, selectedBubbleIds])
+  const visibleContextBubbles = selectedBubbles.length > 0
+    ? selectedBubbles
+    : activeBubble
+      ? [activeBubble]
+      : bubbles.slice(0, 4)
+  const selectedIdSet = new Set(visibleContextBubbles.map((bubble) => bubble.id))
+  const contextRelations = relations.filter((relation) => (
+    selectedIdSet.has(relation.sourceId) || selectedIdSet.has(relation.targetId)
+  ))
+  const contextExtensions = extensions.filter((extension) => selectedIdSet.has(extension.bubbleId))
 
   const handleCategorize = async () => {
     if (bubbles.length < 2) return
@@ -95,6 +112,55 @@ export default function AICategorizePanel({ onClose }: AICategorizePanelProps) {
         <div className="flex-1 overflow-y-auto">
           {!categorizeResult ? (
             <div className="p-5 space-y-5">
+              <section className="rounded-[24px] bg-white/38 ring-1 ring-white/55 overflow-hidden">
+                <button
+                  onClick={() => setIsContextExpanded((value) => !value)}
+                  className="flex w-full items-center gap-2 px-3.5 py-3 text-left text-[13px] font-semibold text-on-surface"
+                >
+                  <Layers3 size={14} className="text-primary" />
+                  <span className="flex-1">当前上下文</span>
+                  <span className="text-[10px] text-outline">{visibleContextBubbles.length} 气泡</span>
+                  {isContextExpanded ? <ChevronUp size={13} className="text-outline" /> : <ChevronDown size={13} className="text-outline" />}
+                </button>
+
+                {isContextExpanded && (
+                  <div className="space-y-3 border-t border-outline-variant/20 px-3.5 py-3">
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[
+                        { label: '分类', value: categories.length },
+                        { label: '关系', value: contextRelations.length },
+                        { label: '补充', value: contextExtensions.length },
+                      ].map((item) => (
+                        <div key={item.label} className="rounded-[16px] bg-white/42 px-2 py-1.5 text-center ring-1 ring-white/50">
+                          <div className="text-[13px] font-semibold leading-4 text-on-surface">{item.value}</div>
+                          <div className="mt-0.5 text-[10px] text-outline">{item.label}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="space-y-2">
+                      {visibleContextBubbles.map((bubble) => (
+                        <div key={bubble.id} className="rounded-[18px] bg-white/42 p-2.5 ring-1 ring-white/50">
+                          <div className="flex items-start gap-2">
+                            <span
+                              className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+                              style={{ backgroundColor: bubble.color || '#94a3b8' }}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="line-clamp-2 text-[12px] leading-5 text-on-surface">{bubble.content}</div>
+                              <div className="mt-1 flex items-center gap-2 text-[10px] text-outline">
+                                <span>{bubble.tag || '未标签'}</span>
+                                <span>权重 {bubble.interactionWeight || 0}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </section>
+
               <div className="text-[14px] text-on-surface-variant leading-relaxed">
                 AI 将分析所有气泡内容，自动归类分组、推荐标签、检测关联与矛盾；接受后会同步整理画布位置，让同类气泡自然聚拢。
               </div>

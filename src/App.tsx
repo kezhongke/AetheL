@@ -4,8 +4,11 @@ import Navigation from "@/components/Navigation";
 import BubbleSpace from "@/pages/BubbleSpace";
 import ContextManager from "@/pages/ContextManager";
 import PrdOutput from "@/pages/PrdOutput";
+import { useWorkspacePersistence } from "@/hooks/useWorkspacePersistence";
 
 export default function App() {
+  useWorkspacePersistence();
+
   return (
     <Router>
       <div className="flex min-h-screen">

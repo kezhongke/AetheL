@@ -1,16 +1,10 @@
-import { useRef, useEffect, useCallback, useState } from 'react'
+import { useRef, useEffect, useCallback, useMemo, useState } from 'react'
 import { HelpCircle, Maximize2, MousePointer2, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react'
 import { useBubbleStore } from '@/stores/bubbleStore'
 import type { Bubble, BubbleRelation } from '@/stores/bubbleStore'
 
 const DEFAULT_BUBBLE_COLOR = '#94a3b8'
-const EMPTY_SELECTED_BUBBLE_IDS: string[] = []
 const CONTRADICTION_MARKER_RADIUS = 13
-
-interface BubbleCanvasProps {
-  selectedBubbleIds?: string[]
-  onSelectionChange?: (ids: string[]) => void
-}
 
 function hexToRgba(hex: string | undefined, alpha: number) {
   const normalized = (hex || DEFAULT_BUBBLE_COLOR).replace('#', '')
@@ -25,15 +19,19 @@ function hexToRgba(hex: string | undefined, alpha: number) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
-export default function BubbleCanvas({ selectedBubbleIds = EMPTY_SELECTED_BUBBLE_IDS, onSelectionChange }: BubbleCanvasProps) {
+export default function BubbleCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const {
     bubbles,
     relations,
     extensions,
-    selectedBubbleId,
-    selectBubble,
+    activeBubbleId,
+    selectedBubbleIds,
+    setActiveBubble,
+    setSelectedBubbleIds,
+    toggleSelectedBubble,
+    clearSelectedBubbles,
     moveBubble,
     viewport,
     setViewport,
@@ -44,28 +42,11 @@ export default function BubbleCanvas({ selectedBubbleIds = EMPTY_SELECTED_BUBBLE
   const [dragging, setDragging] = useState<string | null>(null)
   const [panning, setPanning] = useState(false)
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
-  const [editingBubble, setEditingBubble] = useState<string | null>(null)
-  const [editText, setEditText] = useState('')
   const [showZoomMenu, setShowZoomMenu] = useState(false)
   const [canvasSize, setCanvasSize] = useState({ w: typeof window !== 'undefined' ? window.innerWidth : 1000, h: typeof window !== 'undefined' ? window.innerHeight : 800 })
   const [selectionBox, setSelectionBox] = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null)
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const animRef = useRef<number>(0)
-  const selectedBubbleIdsSignature = selectedBubbleIds.join('|')
-
-  useEffect(() => {
-    setSelectedIds((prev) => {
-      const next = new Set(selectedBubbleIds)
-      if (prev.size === next.size && [...prev].every((id) => next.has(id))) {
-        return prev
-      }
-      return next
-    })
-  }, [selectedBubbleIdsSignature, selectedBubbleIds])
-
-  useEffect(() => {
-    onSelectionChange?.([...selectedIds])
-  }, [onSelectionChange, selectedIds])
+  const selectedIds = useMemo(() => new Set(selectedBubbleIds), [selectedBubbleIds])
 
   const filteredBubbles = filterTag === '__untagged__'
     ? bubbles.filter((b) => !b.tag)
@@ -187,7 +168,7 @@ export default function BubbleCanvas({ selectedBubbleIds = EMPTY_SELECTED_BUBBLE
       const pos = worldToScreen(bubble.x || 0, bubble.y || 0)
       if (isNaN(pos.x) || isNaN(pos.y)) return
 
-      const isSelected = bubble.id === selectedBubbleId
+      const isSelected = bubble.id === activeBubbleId
       const isDragging = bubble.id === dragging
       const isInSelection = selectedIds.has(bubble.id)
       const bubbleExts = extensions.filter((e) => e.bubbleId === bubble.id)
@@ -376,7 +357,7 @@ export default function BubbleCanvas({ selectedBubbleIds = EMPTY_SELECTED_BUBBLE
     }
 
     animRef.current = requestAnimationFrame(drawCanvas)
-  }, [filteredBubbles, filteredRelations, extensions, selectedBubbleId, selectedIds, viewport, canvasSize, dragging, worldToScreen, selectionBox])
+  }, [filteredBubbles, filteredRelations, extensions, activeBubbleId, selectedIds, viewport, canvasSize, dragging, worldToScreen, selectionBox])
 
   useEffect(() => {
     animRef.current = requestAnimationFrame(drawCanvas)
@@ -431,21 +412,19 @@ export default function BubbleCanvas({ selectedBubbleIds = EMPTY_SELECTED_BUBBLE
   )
 
   const selectSingleBubbleContext = useCallback((id: string) => {
-    selectBubble(id)
-    setSelectedIds(new Set([id]))
-  }, [selectBubble])
+    setActiveBubble(id)
+  }, [setActiveBubble])
 
   const clearBubbleContext = useCallback(() => {
-    selectBubble(null)
-    setSelectedIds(new Set())
-  }, [selectBubble])
+    clearSelectedBubbles()
+  }, [clearSelectedBubbles])
 
   const focusRelationPair = useCallback((sourceId: string, targetId: string) => {
     const source = filteredBubbles.find((bubble) => bubble.id === sourceId)
     const target = filteredBubbles.find((bubble) => bubble.id === targetId)
     if (!source || !target) return
 
-    const pair = new Set([sourceId, targetId])
+    const pair = [sourceId, targetId]
     const minX = Math.min(source.x, target.x)
     const maxX = Math.max(source.x, target.x)
     const minY = Math.min(source.y, target.y)
@@ -457,14 +436,14 @@ export default function BubbleCanvas({ selectedBubbleIds = EMPTY_SELECTED_BUBBLE
       canvasSize.h / (height + 260),
     )))
 
-    setSelectedIds(pair)
-    selectBubble(sourceId)
+    setSelectedBubbleIds(pair)
+    setActiveBubble(sourceId, { includeInSelection: false })
     setViewport({
       x: (minX + maxX) / 2,
       y: (minY + maxY) / 2,
       zoom,
     })
-  }, [canvasSize, filteredBubbles, selectBubble, setViewport])
+  }, [canvasSize, filteredBubbles, setActiveBubble, setSelectedBubbleIds, setViewport])
 
   const handleMouseDown = (e: React.MouseEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect()
@@ -505,18 +484,7 @@ export default function BubbleCanvas({ selectedBubbleIds = EMPTY_SELECTED_BUBBLE
     if (canvasMode === 'select') {
       const bubble = bubbleUnderPointer
       if (bubble) {
-        const next = new Set(selectedIds)
-        if (next.has(bubble.id)) {
-          next.delete(bubble.id)
-          if (selectedBubbleId === bubble.id) {
-            const nextActiveId = next.values().next().value as string | undefined
-            selectBubble(nextActiveId || null)
-          }
-        } else {
-          next.add(bubble.id)
-          selectBubble(bubble.id)
-        }
-        setSelectedIds(next)
+        toggleSelectedBubble(bubble.id)
       } else {
         setSelectionBox({ startX: sx, startY: sy, endX: sx, endY: sy })
       }
@@ -565,10 +533,11 @@ export default function BubbleCanvas({ selectedBubbleIds = EMPTY_SELECTED_BUBBLE
             newSelected.add(b.id)
           }
         })
-        setSelectedIds(newSelected)
-        if (newSelected.size > 0 && (!selectedBubbleId || !newSelected.has(selectedBubbleId))) {
+        const nextSelectedIds = Array.from(newSelected)
+        setSelectedBubbleIds(nextSelectedIds)
+        if (newSelected.size > 0 && (!activeBubbleId || !newSelected.has(activeBubbleId))) {
           const nextActiveId = newSelected.values().next().value as string | undefined
-          if (nextActiveId) selectBubble(nextActiveId)
+          if (nextActiveId) setActiveBubble(nextActiveId, { includeInSelection: false })
         }
       }
       setSelectionBox(null)
@@ -579,15 +548,13 @@ export default function BubbleCanvas({ selectedBubbleIds = EMPTY_SELECTED_BUBBLE
   }
 
   const handleDoubleClick = (e: React.MouseEvent) => {
-    if (canvasMode !== 'edit') return
     const rect = canvasRef.current?.getBoundingClientRect()
     if (!rect) return
     const sx = e.clientX - rect.left
     const sy = e.clientY - rect.top
     const bubble = findBubbleAt(sx, sy)
     if (bubble) {
-      setEditingBubble(bubble.id)
-      setEditText(bubble.content)
+      setActiveBubble(bubble.id)
     }
   }
 
@@ -644,22 +611,13 @@ export default function BubbleCanvas({ selectedBubbleIds = EMPTY_SELECTED_BUBBLE
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (editingBubble) return
       if (e.key === 'v' || e.key === 'V') useBubbleStore.getState().setCanvasMode('pan')
       if (e.key === 'e' || e.key === 'E') useBubbleStore.getState().setCanvasMode('edit')
       if (e.key === 's' || e.key === 'S') useBubbleStore.getState().setCanvasMode('select')
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [editingBubble])
-
-  const handleEditSubmit = () => {
-    if (editingBubble && editText.trim()) {
-      useBubbleStore.getState().updateBubble(editingBubble, { content: editText.trim() })
-    }
-    setEditingBubble(null)
-    setEditText('')
-  }
+  }, [])
 
   const cursorMap = {
     pan: 'cursor-grab',
@@ -679,30 +637,6 @@ export default function BubbleCanvas({ selectedBubbleIds = EMPTY_SELECTED_BUBBLE
         onMouseLeave={handleMouseUp}
         onDoubleClick={handleDoubleClick}
       />
-
-      {editingBubble && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50">
-          <div className="glass-panel p-3 flex items-center gap-2">
-            <input
-              type="text"
-              value={editText}
-              onChange={(e) => setEditText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleEditSubmit()}
-              className="input-field text-sm min-w-[300px]"
-              autoFocus
-            />
-            <button onClick={handleEditSubmit} className="btn-liquid text-[13px]">
-              保存
-            </button>
-            <button
-              onClick={() => { setEditingBubble(null); setEditText('') }}
-              className="btn-ghost text-[13px]"
-            >
-              取消
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="absolute bottom-4 left-4 z-[70]">
         {showZoomMenu && (
