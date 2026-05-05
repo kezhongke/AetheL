@@ -89,12 +89,13 @@
       "createdAt": "2026-05-05T06:24:11.807Z"
     }
   ],
+  "revisions": [],
   "viewport": {
     "x": -169.8354092608159,
     "y": -382.802012498909,
     "zoom": 0.6449066929133859
   },
-  "filterTag": null,
+  "filterTag": "产品定位",
   "canvasMode": "pan",
   "bubbleLayout": {
     "mos8nw5758btddodu": {
@@ -112,7 +113,7 @@
       "color": "#4ECDC4",
       "categoryId": "mos8sfw9l45exrnq",
       "tag": "功能设计",
-      "interactionWeight": 6,
+      "interactionWeight": 7,
       "updatedAt": "2026-05-05T06:24:34.373Z"
     },
     "mos8qzejpczkowctp": {
@@ -134,5 +135,5 @@
       "updatedAt": "2026-05-05T06:24:27.090Z"
     }
   },
-  "updatedAt": "2026-05-05T06:40:36.738Z"
+  "updatedAt": "2026-05-05T06:46:37.289Z"
 }
