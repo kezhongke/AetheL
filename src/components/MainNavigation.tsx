@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { AlertCircle, Archive, CheckCircle2, FileText, Loader2, Sparkles } from 'lucide-react'
+import { AlertCircle, Archive, CheckCircle2, FileText, Loader2, Puzzle, Sparkles } from 'lucide-react'
 import { usePersistenceStore } from '@/stores/persistenceStore'
 
 const navItems = [
   { to: '/', icon: Sparkles, label: '灵感气泡' },
   { to: '/context', icon: Archive, label: '快照库' },
   { to: '/prd', icon: FileText, label: 'PRD' },
+  { to: '/workshop', icon: Puzzle, label: '工坊' },
 ]
 
 export default function MainNavigation() {

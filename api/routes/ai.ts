@@ -11,6 +11,17 @@ const client = new OpenAI({
   apiKey: process.env.MODELSCOPE_API_KEY,
 })
 
+function parseJsonObject(content: string) {
+  const jsonMatch = content.match(/\{[\s\S]*\}/)
+  return JSON.parse(jsonMatch ? jsonMatch[0] : content)
+}
+
+function toStringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.map((item) => String(item || '').trim()).filter(Boolean)
+    : []
+}
+
 router.post('/chat', async (req: Request, res: Response) => {
   try {
     const { messages, stream = true } = req.body
@@ -126,6 +137,166 @@ ${bubbles.map((b: { id: string; content: string; tag?: string }) => `[${b.id}] $
   }
 })
 
+router.post('/workshop-skill', async (req: Request, res: Response) => {
+  try {
+    const {
+      skillId,
+      input,
+      confirmationNotes = '',
+      previousQuestions = [],
+      previousBubbles = [],
+    } = req.body
+
+    if (!skillId || !['idea-to-bubbles', 'prd-to-bubbles'].includes(skillId)) {
+      res.status(400).json({ success: false, error: 'valid skillId is required' })
+      return
+    }
+
+    if (!input || typeof input !== 'string' || input.trim().length === 0) {
+      res.status(400).json({ success: false, error: 'input is required' })
+      return
+    }
+
+    const isIdeaSkill = skillId === 'idea-to-bubbles'
+    const skillInstruction = isIdeaSkill
+      ? `当前 skill：一句话生成模块气泡。
+你要真实分析用户的一句话或初步设想，识别其中暗含的用户、触发场景、核心价值、模块雏形、风险假设和验证路径。
+不要使用固定模板填空；每个候选气泡都必须来自这条设想本身的语义、合理推断或用户补充确认。
+第一个候选气泡必须保留用户原始输入，title 使用“初始设想”，content 必须等于用户原始输入。
+从第二个候选气泡开始，只写独立可执行的分析内容或追问方向，不要重复用户原始输入。`
+      : `当前 skill：PRD 文档拆分气泡。
+你要真实阅读用户粘贴的 PRD 草稿或 Markdown 文档，将它拆为可独立追问、可进入画布继续加工的模块气泡。
+不要只按标题机械切分；需要合并重复段落、拆出隐含约束、识别未写清的验收标准和模块依赖。
+如果文档过长，第一个候选气泡可以是“PRD 输入摘要”，content 必须是你对原文的压缩摘要，不要整段复制原文。
+其他候选气泡必须是独立模块、约束、风险或验证项。`
+
+    const systemPrompt = `你是 Aethel 创意工坊里的 AI skill 运行器，也是一名资深产品思考搭档。
+你的职责不是给用户套模板，而是把用户输入转换为可确认、可编辑、可落到画布的气泡候选。
+
+工作流：
+1. 先分析输入的真实意图、上下文缺口和产品价值。
+2. 如果有关键不确定项，提出 2-4 个具体澄清问题，帮助用户确认。问题要与输入强相关。
+3. 即使需要澄清，也要先给一版候选气泡，标注哪些来自明确输入，哪些来自合理推断。
+4. 如果用户已经提供补充确认，要吸收这些确认，更新候选气泡，并减少重复澄清问题。
+5. 输出必须支持用户点击确认后直接生成气泡，因此每个候选气泡的 content 要短、明确、可独立追问。
+
+${skillInstruction}
+
+请只返回严格 JSON，不要包含 Markdown 或额外说明：
+{
+  "analysisSummary": "对用户输入的真实分析摘要，120字以内",
+  "needsConfirmation": true,
+  "confidence": 0.78,
+  "confirmationPrompt": "建议用户确认的核心判断，一句话",
+  "clarificationQuestions": [
+    {
+      "id": "q1",
+      "label": "问题标题",
+      "question": "具体问题",
+      "reason": "为什么需要确认",
+      "placeholder": "输入提示"
+    }
+  ],
+  "candidateBubbles": [
+    {
+      "title": "气泡标题",
+      "content": "气泡内容",
+      "tag": "推荐标签",
+      "rationale": "为什么生成这条气泡"
+    }
+  ],
+  "suggestedNextActions": ["确认后生成气泡", "继续补充目标用户"]
+}`
+
+    const userPrompt = [
+      '用户输入：',
+      input.trim(),
+      '',
+      confirmationNotes ? `用户补充确认：\n${confirmationNotes}` : '用户补充确认：暂无',
+      '',
+      Array.isArray(previousQuestions) && previousQuestions.length > 0
+        ? `上一轮澄清问题：\n${previousQuestions.map((item: { question?: string }, index: number) => `${index + 1}. ${item.question || ''}`).join('\n')}`
+        : '上一轮澄清问题：暂无',
+      '',
+      Array.isArray(previousBubbles) && previousBubbles.length > 0
+        ? `上一轮候选气泡：\n${previousBubbles.map((item: { title?: string; content?: string }, index: number) => `${index + 1}. ${item.title || '未命名'}：${item.content || ''}`).join('\n')}`
+        : '上一轮候选气泡：暂无',
+    ].join('\n')
+
+    const response = await client.chat.completions.create({
+      model: 'moonshotai/Kimi-K2.5',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      stream: false,
+    })
+
+    const content = response.choices[0]?.message?.content || '{}'
+    let parsed
+    try {
+      parsed = parseJsonObject(content)
+    } catch {
+      res.status(502).json({ success: false, error: 'AI workshop skill response parse failed' })
+      return
+    }
+
+    const candidateBubbles = Array.isArray(parsed.candidateBubbles)
+      ? parsed.candidateBubbles
+        .map((bubble: { title?: string; content?: string; tag?: string; rationale?: string }) => ({
+          title: String(bubble.title || '未命名气泡').trim(),
+          content: String(bubble.content || '').trim(),
+          tag: String(bubble.tag || (isIdeaSkill ? '创意工坊' : 'PRD拆解')).trim(),
+          rationale: String(bubble.rationale || '').trim(),
+        }))
+        .filter((bubble: { content: string }) => bubble.content.length > 0)
+      : []
+
+    if (isIdeaSkill) {
+      const first = candidateBubbles[0]
+      if (!first || first.content !== input.trim()) {
+        candidateBubbles.unshift({
+          title: '初始设想',
+          content: input.trim(),
+          tag: '创意工坊',
+          rationale: '保留用户的原始输入，作为后续拆解的源头。',
+        })
+      } else {
+        first.title = first.title || '初始设想'
+        first.tag = first.tag || '创意工坊'
+      }
+    }
+
+    res.json({
+      success: true,
+      analysisSummary: String(parsed.analysisSummary || '').trim(),
+      needsConfirmation: Boolean(parsed.needsConfirmation),
+      confidence: Number(parsed.confidence || 0),
+      confirmationPrompt: String(parsed.confirmationPrompt || '').trim(),
+      clarificationQuestions: Array.isArray(parsed.clarificationQuestions)
+        ? parsed.clarificationQuestions.map((question: {
+          id?: string
+          label?: string
+          question?: string
+          reason?: string
+          placeholder?: string
+        }, index: number) => ({
+          id: String(question.id || `q${index + 1}`),
+          label: String(question.label || `确认 ${index + 1}`).trim(),
+          question: String(question.question || '').trim(),
+          reason: String(question.reason || '').trim(),
+          placeholder: String(question.placeholder || '补充你的判断...').trim(),
+        })).filter((question: { question: string }) => question.question.length > 0)
+        : [],
+      candidateBubbles,
+      suggestedNextActions: toStringArray(parsed.suggestedNextActions),
+    })
+  } catch (error: unknown) {
+    console.error('AI workshop skill error:', error)
+    res.status(500).json({ success: false, error: (error as Error).message || 'AI workshop skill error' })
+  }
+})
+
 router.post('/generate-prd', async (req: Request, res: Response) => {
   try {
     const { bubbleIds, bubbles, template = 'standard', modules } = req.body
@@ -186,6 +357,98 @@ ${modules ? `需要包含的模块：${modules.join('、')}` : ''}
   } catch (error: unknown) {
     console.error('AI generate-prd error:', error)
     res.status(500).json({ success: false, error: (error as Error).message || 'AI generate PRD error' })
+  }
+})
+
+router.post('/generate-prd-sections', async (req: Request, res: Response) => {
+  try {
+    const { groups, template = 'standard' } = req.body
+
+    if (!Array.isArray(groups) || groups.length === 0) {
+      res.status(400).json({ success: false, error: 'groups is required' })
+      return
+    }
+
+    const groupLines = groups.map((group: {
+      id: string
+      title: string
+      tag?: string
+      bubbles?: Array<{ id: string; content: string; tag?: string; extensions?: string[] }>
+    }, index: number) => {
+      const bubbles = Array.isArray(group.bubbles) ? group.bubbles : []
+      const bubbleLines = bubbles.map((bubble, bubbleIndex) => {
+        const lines = [
+          `气泡 ${bubbleIndex + 1}`,
+          `ID: ${bubble.id}`,
+          `内容: ${bubble.content}`,
+        ]
+        if (bubble.tag) lines.push(`标签: ${bubble.tag}`)
+        if (bubble.extensions?.length) lines.push(`追问补充: ${bubble.extensions.join('；')}`)
+        return lines.join('\n')
+      }).join('\n\n')
+
+      return [
+        `分组 ${index + 1}`,
+        `分组ID: ${group.id}`,
+        `章节标题: ${group.title}`,
+        group.tag ? `标签: ${group.tag}` : '',
+        '气泡：',
+        bubbleLines,
+      ].filter(Boolean).join('\n')
+    }).join('\n\n---\n\n')
+
+    const systemPrompt = `你是一个专业的产品经理，正在把产品构思气泡生成可编辑的 PRD 分章节草稿。
+用户已经按标签/分类把气泡分组，每个分组应生成一个独立 PRD section。
+
+要求：
+1. 每个输入分组必须返回一个 section，section.groupId 必须等于输入分组ID。
+2. section.title 可以优化为更像 PRD 章节标题，但必须保留该分组的含义。
+3. section.content 使用 Markdown 正文，不要再输出一级标题；可以包含二级/三级小标题、列表、验收点。
+4. 内容要吸收气泡正文、标签和追问补充，不要只是罗列气泡。
+5. 避免跨分组重复表达，同一类判断在自己的 section 中讲清楚即可。
+6. ${template === 'lean' ? '使用精简模板，章节内容保持短而可执行。' : template === 'detailed' ? '使用详细模板，补足背景、约束、验收标准和风险。' : '使用标准模板，平衡完整性与可读性。'}
+
+请只返回严格 JSON，不要包含 Markdown 代码块或额外说明：
+{
+  "sections": [
+    {
+      "groupId": "输入分组ID",
+      "title": "章节标题",
+      "content": "Markdown 正文"
+    }
+  ]
+}`
+
+    const response = await client.chat.completions.create({
+      model: 'moonshotai/Kimi-K2.5',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `请根据以下分组气泡生成 PRD sections：\n\n${groupLines}` },
+      ],
+      stream: false,
+    })
+
+    const content = response.choices[0]?.message?.content || '{}'
+    let parsed
+    try {
+      parsed = parseJsonObject(content)
+    } catch {
+      res.status(502).json({ success: false, error: 'AI PRD sections response parse failed' })
+      return
+    }
+
+    const sections = Array.isArray(parsed.sections)
+      ? parsed.sections.map((section: { groupId?: string; title?: string; content?: string }) => ({
+        groupId: String(section.groupId || '').trim(),
+        title: String(section.title || '未命名章节').trim(),
+        content: String(section.content || '').trim(),
+      })).filter((section: { groupId: string; content: string }) => section.groupId && section.content)
+      : []
+
+    res.json({ success: true, sections })
+  } catch (error: unknown) {
+    console.error('AI generate-prd-sections error:', error)
+    res.status(500).json({ success: false, error: (error as Error).message || 'AI generate PRD sections error' })
   }
 })
 

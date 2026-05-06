@@ -41,6 +41,45 @@ export interface PrdBubbleInput {
   extensions?: string[]
 }
 
+export interface PrdSectionGroupInput {
+  id: string
+  title: string
+  tag: string
+  color: string
+  bubbles: PrdBubbleInput[]
+}
+
+export interface PrdSectionAiResult {
+  groupId: string
+  title: string
+  content: string
+}
+
+export interface WorkshopClarificationQuestion {
+  id: string
+  label: string
+  question: string
+  reason: string
+  placeholder: string
+}
+
+export interface WorkshopCandidateBubble {
+  title: string
+  content: string
+  tag: string
+  rationale: string
+}
+
+export interface WorkshopSkillResult {
+  analysisSummary: string
+  needsConfirmation: boolean
+  confidence: number
+  confirmationPrompt: string
+  clarificationQuestions: WorkshopClarificationQuestion[]
+  candidateBubbles: WorkshopCandidateBubble[]
+  suggestedNextActions: string[]
+}
+
 interface AiState {
   isLoading: boolean
   error: string | null
@@ -52,7 +91,15 @@ interface AiState {
 
   categorize: (bubbles: Array<{ id: string; content: string; tag?: string }>, existingTags?: string[]) => Promise<CategorizeResult | null>
   generatePrd: (bubbles: PrdBubbleInput[], template?: string, onChunk?: (content: string) => void) => Promise<string>
+  generatePrdSections: (groups: PrdSectionGroupInput[], template?: string) => Promise<PrdSectionAiResult[]>
   sendChat: (messages: Array<{ role: string; content: string }>, onChunk?: (content: string) => void) => Promise<string>
+  runWorkshopSkill: (payload: {
+    skillId: 'idea-to-bubbles' | 'prd-to-bubbles'
+    input: string
+    confirmationNotes?: string
+    previousQuestions?: WorkshopClarificationQuestion[]
+    previousBubbles?: WorkshopCandidateBubble[]
+  }) => Promise<WorkshopSkillResult | null>
   followUp: (
     bubbleContent: string,
     existingBubbles: string[],
@@ -152,6 +199,62 @@ export const useAiStore = create<AiState>((set) => ({
     } catch (error: unknown) {
       set({ error: (error as Error).message, isLoading: false })
       return ''
+    }
+  },
+
+  generatePrdSections: async (groups, template = 'standard') => {
+    set({ isLoading: true, error: null })
+    try {
+      const response = await fetch('/api/ai/generate-prd-sections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groups, template }),
+      })
+
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.error || 'PRD分区生成请求失败')
+      }
+
+      const data = await response.json()
+      const sections: PrdSectionAiResult[] = data.sections || []
+      set({ isLoading: false })
+      return sections
+    } catch (error: unknown) {
+      set({ error: (error as Error).message, isLoading: false })
+      return []
+    }
+  },
+
+  runWorkshopSkill: async (payload) => {
+    set({ isLoading: true, error: null })
+    try {
+      const response = await fetch('/api/ai/workshop-skill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.error || 'Skill 运行失败')
+      }
+
+      const data = await response.json()
+      const result: WorkshopSkillResult = {
+        analysisSummary: data.analysisSummary || '',
+        needsConfirmation: Boolean(data.needsConfirmation),
+        confidence: Number(data.confidence || 0),
+        confirmationPrompt: data.confirmationPrompt || '',
+        clarificationQuestions: data.clarificationQuestions || [],
+        candidateBubbles: data.candidateBubbles || [],
+        suggestedNextActions: data.suggestedNextActions || [],
+      }
+      set({ isLoading: false })
+      return result
+    } catch (error: unknown) {
+      set({ error: (error as Error).message, isLoading: false })
+      return null
     }
   },
 

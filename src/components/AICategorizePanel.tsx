@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Brain, Check, X, Loader2, ChevronDown, ChevronUp, AlertTriangle, Link2, Copy, Layers3 } from 'lucide-react'
+import { Brain, Check, X, Loader2, ChevronDown, ChevronUp, AlertTriangle, Link2, Copy, Layers3, Minimize2 } from 'lucide-react'
 import { useBubbleStore } from '@/stores/bubbleStore'
 import { useAiStore } from '@/stores/aiStore'
 
@@ -14,7 +14,7 @@ interface AICategorizePanelProps {
 }
 
 export default function AICategorizePanel({ onClose }: AICategorizePanelProps) {
-  const { bubbles, categories, relations, extensions, activeBubbleId, selectedBubbleIds, setCategoriesFromAI, setRelations } = useBubbleStore()
+  const { bubbles, categories, relations, extensions, activeBubbleId, selectedBubbleIds, setCategoriesFromAI, compactCategorizedLayout, setRelations } = useBubbleStore()
   const { isLoading, categorizeResult, categorize, clearCategorizeResult } = useAiStore()
   const [isExpanded, setIsExpanded] = useState(true)
   const [isContextExpanded, setIsContextExpanded] = useState(true)
@@ -191,7 +191,16 @@ export default function AICategorizePanel({ onClose }: AICategorizePanelProps) {
 
               {categories.length > 0 && (
                 <div className="space-y-2">
-                  <div className="text-[14px] text-on-surface font-semibold">已有分类</div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-[14px] text-on-surface font-semibold">已有分类</div>
+                    <button
+                      onClick={compactCategorizedLayout}
+                      className="flex h-8 items-center gap-1.5 rounded-full bg-white/45 px-3 text-[11px] font-semibold text-on-surface-variant ring-1 ring-white/55 transition-all hover:bg-primary-fixed/45 hover:text-primary"
+                    >
+                      <Minimize2 size={12} />
+                      收拢布局
+                    </button>
+                  </div>
                   {categories.map((cat) => {
                     const count = bubbles.filter((b) => b.categoryId === cat.id).length
                     return (

@@ -4,6 +4,7 @@ import Navigation from "@/components/Navigation";
 import BubbleSpace from "@/pages/BubbleSpace";
 import ContextManager from "@/pages/ContextManager";
 import PrdOutput from "@/pages/PrdOutput";
+import CreativeWorkshop from "@/pages/CreativeWorkshop";
 import { useWorkspacePersistence } from "@/hooks/useWorkspacePersistence";
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
             <Route path="/" element={<BubbleSpace />} />
             <Route path="/context" element={<ContextManager />} />
             <Route path="/prd" element={<PrdOutput />} />
+            <Route path="/workshop" element={<CreativeWorkshop />} />
           </Routes>
         </main>
       </div>

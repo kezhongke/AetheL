@@ -9,6 +9,17 @@ export interface PrdModule {
   order: number
 }
 
+export interface PrdSectionDraft {
+  id: string
+  title: string
+  tag: string
+  color: string
+  bubbleIds: string[]
+  content: string
+  order: number
+  updatedAt: string
+}
+
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 9)
 }
@@ -18,6 +29,7 @@ interface PrdState {
   selectedModuleId: string | null
   isGenerating: boolean
   generatedContent: string
+  sectionDrafts: PrdSectionDraft[]
   template: 'standard' | 'lean' | 'detailed'
 
   addModule: (module: Omit<PrdModule, 'id' | 'order'>) => void
@@ -28,6 +40,9 @@ interface PrdState {
   setGenerating: (isGenerating: boolean) => void
   setGeneratedContent: (content: string) => void
   appendGeneratedContent: (content: string) => void
+  setSectionDrafts: (sections: Array<Omit<PrdSectionDraft, 'id' | 'order' | 'updatedAt'> & { id?: string; order?: number }>) => void
+  updateSectionDraft: (id: string, updates: Partial<PrdSectionDraft>) => void
+  clearSectionDrafts: () => void
   setTemplate: (template: PrdState['template']) => void
   clearModules: () => void
 }
@@ -37,6 +52,7 @@ export const usePrdStore = create<PrdState>((set) => ({
   selectedModuleId: null,
   isGenerating: false,
   generatedContent: '',
+  sectionDrafts: [],
   template: 'standard',
 
   addModule: (module) => {
@@ -76,7 +92,33 @@ export const usePrdStore = create<PrdState>((set) => ({
   appendGeneratedContent: (content) =>
     set((state) => ({ generatedContent: state.generatedContent + content })),
 
+  setSectionDrafts: (sections) => {
+    const now = new Date().toISOString()
+    set({
+      sectionDrafts: sections.map((section, index) => ({
+        id: section.id || generateId(),
+        title: section.title,
+        tag: section.tag,
+        color: section.color,
+        bubbleIds: section.bubbleIds,
+        content: section.content,
+        order: section.order ?? index,
+        updatedAt: now,
+      })),
+    })
+  },
+
+  updateSectionDraft: (id, updates) => {
+    set((state) => ({
+      sectionDrafts: state.sectionDrafts.map((section) =>
+        section.id === id ? { ...section, ...updates, updatedAt: new Date().toISOString() } : section
+      ),
+    }))
+  },
+
+  clearSectionDrafts: () => set({ sectionDrafts: [] }),
+
   setTemplate: (template) => set({ template }),
 
-  clearModules: () => set({ modules: [], generatedContent: '' }),
+  clearModules: () => set({ modules: [], generatedContent: '', sectionDrafts: [] }),
 }))

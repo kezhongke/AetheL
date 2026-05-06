@@ -14,10 +14,28 @@
 - **Product Thinking Bubble Space**: Quickly capture product ideas, assumptions, user scenarios, constraints, and open questions via text or voice.
 - **AI Intelligent Categorization**: Automatically groups related bubbles, recommends tags, and detects correlations (related, contradictory, or duplicate).
 - **Cognitive Snapshot System**: Save, compress, and restore product-thinking contexts through semantic anchors, logic flows, and wake-up prompts.
-- **PRD Output Center**: Stream-generate structured product requirement drafts based on selected bubble sets, supporting Markdown and PDF exports.
+- **Creative Workshop**: Run AI-backed skills that transform a one-line idea, PRD draft, or rough external input into structured product-thinking bubbles.
+- **PRD Output Center**: Generate editable PRD section drafts from selected bubble groups, with tag-colored sections and Markdown/PDF exports.
 - **AI Follow-up System**: Interactive AI asks clarifying questions to help refine goals, users, scenarios, risks, and success criteria.
 - **Durable Knowledge Storage**: Persist bubbles and snapshots as Markdown files, with canvas state stored in JSON for reliable recovery and Git-friendly evolution.
 - **Workspace Context Controls**: Maintain an explicit active bubble and multi-bubble selection state, with contextual AI panels and richer bubble detail history.
+
+### 🧭 Product Workflow
+```text
+Rough idea / PRD draft / external notes
+  -> Creative Workshop AI skill analysis
+  -> Candidate bubbles with clarification loop
+  -> Bubble workspace organization, follow-up, categorization, and snapshots
+  -> PRD Output Center grouped by bubble tags/categories
+  -> Editable section drafts
+  -> Markdown / PDF export
+```
+
+### 🧩 Key Pages
+- **Inspiration Bubbles (`/`)**: The primary cognitive canvas for capturing, selecting, editing, deleting, classifying, and expanding product-thinking bubbles.
+- **Creative Workshop (`/workshop`)**: The input transformation layer. It executes AI skills such as one-line idea decomposition and PRD-to-bubbles analysis, then writes results back to the canvas.
+- **PRD Output (`/prd`)**: The document output layer. It groups selected bubbles by tag/category, generates editable PRD sections, and exports a complete document.
+- **Snapshot Library (`/context`)**: The semantic memory layer for reviewing and restoring saved thinking contexts.
 
 ### 🛠 Tech Stack
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Zustand, Framer Motion.
@@ -89,10 +107,28 @@ data/
 - **产品构思气泡空间**：支持文字/语音快速录入产品想法、假设、用户场景、约束与开放问题。
 - **AI 智能归类引擎**：自动分析气泡关联性，智能推荐标签，并检测重复或矛盾的内容。
 - **认知快照系统**：通过语义锚点、逻辑脉络与唤醒指令，保存、压缩并恢复产品构思上下文。
-- **PRD 输出中心**：基于选定的气泡集合，流式生成结构化产品需求草稿，支持导出为 Markdown 或 PDF。
+- **创意工坊**：通过真实 AI skill runner，把一句话想法、PRD 草稿或外部输入转换为结构化产品气泡。
+- **PRD 输出中心**：基于选定气泡束生成可编辑 PRD 分区草稿，支持标签同色标识、Markdown 和 PDF 导出。
 - **AI 追问系统**：AI 会根据录入内容提出启发式追问，引导用户澄清目标用户、使用场景、风险与成功标准。
 - **长期知识存储**：气泡与快照会落为 Markdown 文件，画布运行态写入 JSON，便于恢复、迁移和 Git 版本管理。
 - **工作区上下文控制**：明确区分主处理气泡和多选气泡集合，右侧 AI 面板与左侧详情面板都能读取当前上下文。
+
+### 🧭 产品工作流
+```text
+粗糙想法 / PRD 草稿 / 外部资料
+  -> 创意工坊 AI skill 分析
+  -> 候选气泡与用户确认补充
+  -> 灵感气泡画布整理、追问、归类、快照
+  -> PRD 输出中心按标签/分类分束
+  -> 可编辑章节草稿
+  -> Markdown / PDF 导出
+```
+
+### 🧩 关键页面
+- **灵感气泡（`/`）**：主认知画布，负责捕捉、选择、编辑、删除、归类和扩展产品思考气泡。
+- **创意工坊（`/workshop`）**：输入变换层，执行一句话拆解、PRD 气泡化等 AI skill，并把结果写回画布。
+- **PRD 输出（`/prd`）**：文档输出层，按标签/分类归束所选气泡，生成可编辑 PRD 章节并导出完整文档。
+- **快照库（`/context`）**：语义记忆层，用于回看和恢复已保存的思考现场。
 
 ### 🛠 技术栈
 - **前端**：React 18, TypeScript, Vite, Tailwind CSS, Zustand, Framer Motion。

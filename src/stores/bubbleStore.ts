@@ -10,6 +10,10 @@ export interface Bubble {
   x: number
   y: number
   interactionWeight?: number
+  sourceSkillId?: string
+  sourceGroupId?: string
+  sourceLabel?: string
+  prdUsageCount?: number
   createdAt: string
   updatedAt: string
 }
@@ -119,22 +123,40 @@ function pickDistinctCategoryColor(index: number, usedColors: Set<string>, prefe
 
 function getClusteredBubblePosition(categoryIndex: number, categoryCount: number, itemIndex: number, itemCount: number) {
   const safeCategoryCount = Math.max(categoryCount, 1)
-  const clusterRadius = Math.max(300, safeCategoryCount * 150)
-  const categoryAngle = -Math.PI / 2 + (categoryIndex / safeCategoryCount) * Math.PI * 2
-  const categoryCenterX = Math.cos(categoryAngle) * clusterRadius
-  const categoryCenterY = Math.sin(categoryAngle) * clusterRadius
+  const columns = Math.min(3, Math.ceil(Math.sqrt(safeCategoryCount)))
+  const rows = Math.ceil(safeCategoryCount / columns)
+  const column = categoryIndex % columns
+  const row = Math.floor(categoryIndex / columns)
+  const categoryGapX = 430
+  const categoryGapY = 310
+  const categoryCenterX = (column - (columns - 1) / 2) * categoryGapX
+  const categoryCenterY = (row - (rows - 1) / 2) * categoryGapY
 
   if (itemCount <= 1) {
     return { x: categoryCenterX, y: categoryCenterY }
   }
 
-  const localRadius = Math.min(210, Math.max(92, 54 + itemCount * 22))
-  const localAngle = -Math.PI / 2 + (itemIndex / itemCount) * Math.PI * 2 + (categoryIndex % 2) * 0.28
+  const itemColumns = itemCount <= 3 ? 1 : 2
+  const itemRows = Math.ceil(itemCount / itemColumns)
+  const itemColumn = itemIndex % itemColumns
+  const itemRow = Math.floor(itemIndex / itemColumns)
+  const localGapX = 230
+  const localGapY = 86
 
   return {
-    x: categoryCenterX + Math.cos(localAngle) * localRadius,
-    y: categoryCenterY + Math.sin(localAngle) * localRadius,
+    x: categoryCenterX + (itemColumn - (itemColumns - 1) / 2) * localGapX,
+    y: categoryCenterY + (itemRow - (itemRows - 1) / 2) * localGapY,
   }
+}
+
+function getCategorizedViewport(categoryCount: number, bubbleCount: number) {
+  const safeCategoryCount = Math.max(categoryCount, 1)
+  const columns = Math.min(3, Math.ceil(Math.sqrt(safeCategoryCount)))
+  const rows = Math.ceil(safeCategoryCount / columns)
+  const spreadScore = Math.max(columns, rows) + Math.max(0, bubbleCount - 10) * 0.08
+  const zoom = Math.max(0.58, Math.min(0.95, 1.08 - spreadScore * 0.12))
+
+  return { x: 0, y: 0, zoom }
 }
 
 interface BubbleState {
@@ -150,7 +172,13 @@ interface BubbleState {
   viewport: { x: number; y: number; zoom: number }
   canvasMode: 'pan' | 'edit' | 'select'
 
-  addBubble: (content: string, tag?: string, x?: number, y?: number) => string
+  addBubble: (
+    content: string,
+    tag?: string,
+    x?: number,
+    y?: number,
+    metadata?: Pick<Bubble, 'sourceSkillId' | 'sourceGroupId' | 'sourceLabel'>,
+  ) => string
   updateBubble: (id: string, updates: Partial<Bubble>) => void
   deleteBubble: (id: string) => void
   moveBubble: (id: string, x: number, y: number) => void
@@ -161,6 +189,7 @@ interface BubbleState {
   removeSelectedBubble: (id: string) => void
   clearSelectedBubbles: () => void
   incrementBubbleWeight: (id: string) => void
+  incrementPrdUsage: (ids: string[]) => void
   setFilterTag: (tag: string | null) => void
   setViewport: (viewport: Partial<BubbleState['viewport']>) => void
   setCanvasMode: (mode: BubbleState['canvasMode']) => void
@@ -179,6 +208,7 @@ interface BubbleState {
   setRelations: (relations: BubbleRelation[]) => void
 
   setCategoriesFromAI: (categories: Array<Omit<Category, 'id'> & { bubbleIds: string[]; suggestedTag?: string }>) => void
+  compactCategorizedLayout: () => void
   ensureDistinctCategoryColors: () => void
 
   getFilteredBubbles: () => Bubble[]
@@ -198,6 +228,7 @@ function migrateBubbleState(persistedState: unknown): PersistedBubbleState {
       tag: bubble.tag || '',
       categoryId: bubble.categoryId || '',
       interactionWeight: typeof bubble.interactionWeight === 'number' ? bubble.interactionWeight : 0,
+      prdUsageCount: typeof bubble.prdUsageCount === 'number' ? bubble.prdUsageCount : 0,
       createdAt: bubble.createdAt || new Date().toISOString(),
       updatedAt: bubble.updatedAt || bubble.createdAt || new Date().toISOString(),
     })),
@@ -224,7 +255,7 @@ export const useBubbleStore = create<BubbleState>()(persist((set, get) => ({
   viewport: { x: 0, y: 0, zoom: 1 },
   canvasMode: 'pan',
 
-  addBubble: (content, tag = '', x, y) => {
+  addBubble: (content, tag = '', x, y, metadata) => {
     const existingTagColor = tag
       ? get().bubbles.find((bubble) => bubble.tag === tag && bubble.color)?.color
       : undefined
@@ -237,10 +268,12 @@ export const useBubbleStore = create<BubbleState>()(persist((set, get) => ({
       x: x ?? (Math.random() - 0.5) * 200,
       y: y ?? (Math.random() - 0.5) * 200,
       interactionWeight: 0,
+      prdUsageCount: 0,
+      ...(metadata || {}),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
-    set((state) => ({ bubbles: [...state.bubbles, bubble] }))
+    set((state) => ({ bubbles: [...state.bubbles, bubble], filterTag: null }))
     return bubble.id
   },
 
@@ -442,6 +475,23 @@ export const useBubbleStore = create<BubbleState>()(persist((set, get) => ({
     }))
   },
 
+  incrementPrdUsage: (ids) => {
+    const idSet = new Set(ids)
+    if (idSet.size === 0) return
+    set((state) => ({
+      bubbles: state.bubbles.map((bubble) =>
+        idSet.has(bubble.id)
+          ? {
+            ...bubble,
+            prdUsageCount: (bubble.prdUsageCount || 0) + 1,
+            interactionWeight: (bubble.interactionWeight || 0) + 4,
+            updatedAt: new Date().toISOString(),
+          }
+          : bubble
+      ),
+    }))
+  },
+
   setFilterTag: (tag) => set({ filterTag: tag }),
 
   setViewport: (viewport) =>
@@ -576,7 +626,51 @@ export const useBubbleStore = create<BubbleState>()(persist((set, get) => ({
         }
       })
 
-      return { categories: newCategories, bubbles: updatedBubbles }
+      return {
+        categories: newCategories,
+        bubbles: updatedBubbles,
+        viewport: getCategorizedViewport(newCategories.length, updatedBubbles.length),
+        filterTag: null,
+      }
+    })
+  },
+
+  compactCategorizedLayout: () => {
+    set((state) => {
+      const categoryIds = state.categories.map((category) => category.id)
+      const categoryCount = Math.max(categoryIds.length, 1)
+      const positionByBubbleId = new Map<string, { x: number; y: number }>()
+
+      categoryIds.forEach((categoryId, categoryIndex) => {
+        const categoryBubbles = state.bubbles.filter((bubble) => bubble.categoryId === categoryId)
+        categoryBubbles.forEach((bubble, itemIndex) => {
+          positionByBubbleId.set(
+            bubble.id,
+            getClusteredBubblePosition(categoryIndex, categoryCount, itemIndex, categoryBubbles.length),
+          )
+        })
+      })
+
+      const unassignedBubbles = state.bubbles.filter((bubble) => !positionByBubbleId.has(bubble.id))
+      unassignedBubbles.forEach((bubble, index) => {
+        const column = index % 3
+        const row = Math.floor(index / 3)
+        positionByBubbleId.set(bubble.id, {
+          x: (column - 1) * 230,
+          y: Math.ceil(categoryCount / 3) * 310 + 180 + row * 86,
+        })
+      })
+
+      const now = new Date().toISOString()
+      return {
+        bubbles: state.bubbles.map((bubble) => ({
+          ...bubble,
+          ...(positionByBubbleId.get(bubble.id) || {}),
+          updatedAt: now,
+        })),
+        viewport: getCategorizedViewport(categoryCount, state.bubbles.length),
+        filterTag: null,
+      }
     })
   },
 
