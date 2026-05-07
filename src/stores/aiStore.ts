@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { apiFetch } from '@/lib/apiClient'
 
 interface CategorizeResult {
   categories: Array<{
@@ -82,6 +83,7 @@ export interface WorkshopSkillResult {
 
 interface AiState {
   isLoading: boolean
+  activeTaskLabel: string | null
   error: string | null
   categorizeResult: CategorizeResult | null
   chatStream: string
@@ -108,10 +110,12 @@ interface AiState {
   clearError: () => void
   clearCategorizeResult: () => void
   clearFollowUp: () => void
+  setGlobalAiActivity: (isLoading: boolean, label?: string | null) => void
 }
 
 export const useAiStore = create<AiState>((set) => ({
   isLoading: false,
+  activeTaskLabel: null,
   error: null,
   categorizeResult: null,
   chatStream: '',
@@ -120,9 +124,9 @@ export const useAiStore = create<AiState>((set) => ({
   activeFollowUpBubbleIds: [],
 
   categorize: async (bubbles, existingTags = []) => {
-    set({ isLoading: true, error: null })
+    set({ isLoading: true, activeTaskLabel: '正在归类气泡', error: null })
     try {
-      const response = await fetch('/api/ai/categorize', {
+      const response = await apiFetch('/api/ai/categorize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bubbles, existingTags }),
@@ -139,18 +143,18 @@ export const useAiStore = create<AiState>((set) => ({
         suggestedTags: data.suggestedTags || [],
         relations: data.relations || [],
       }
-      set({ categorizeResult: result, isLoading: false })
+      set({ categorizeResult: result, isLoading: false, activeTaskLabel: null })
       return result
     } catch (error: unknown) {
-      set({ error: (error as Error).message, isLoading: false })
+      set({ error: (error as Error).message, isLoading: false, activeTaskLabel: null })
       return null
     }
   },
 
   generatePrd: async (bubbles, template = 'standard', onChunk) => {
-    set({ isLoading: true, error: null })
+    set({ isLoading: true, activeTaskLabel: '正在生成 PRD', error: null })
     try {
-      const response = await fetch('/api/ai/generate-prd', {
+      const response = await apiFetch('/api/ai/generate-prd', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -194,18 +198,18 @@ export const useAiStore = create<AiState>((set) => ({
         }
       }
 
-      set({ isLoading: false })
+      set({ isLoading: false, activeTaskLabel: null })
       return fullContent
     } catch (error: unknown) {
-      set({ error: (error as Error).message, isLoading: false })
+      set({ error: (error as Error).message, isLoading: false, activeTaskLabel: null })
       return ''
     }
   },
 
   generatePrdSections: async (groups, template = 'standard') => {
-    set({ isLoading: true, error: null })
+    set({ isLoading: true, activeTaskLabel: '正在生成 PRD 分区', error: null })
     try {
-      const response = await fetch('/api/ai/generate-prd-sections', {
+      const response = await apiFetch('/api/ai/generate-prd-sections', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ groups, template }),
@@ -218,18 +222,18 @@ export const useAiStore = create<AiState>((set) => ({
 
       const data = await response.json()
       const sections: PrdSectionAiResult[] = data.sections || []
-      set({ isLoading: false })
+      set({ isLoading: false, activeTaskLabel: null })
       return sections
     } catch (error: unknown) {
-      set({ error: (error as Error).message, isLoading: false })
+      set({ error: (error as Error).message, isLoading: false, activeTaskLabel: null })
       return []
     }
   },
 
   runWorkshopSkill: async (payload) => {
-    set({ isLoading: true, error: null })
+    set({ isLoading: true, activeTaskLabel: '正在运行 AI Skill', error: null })
     try {
-      const response = await fetch('/api/ai/workshop-skill', {
+      const response = await apiFetch('/api/ai/workshop-skill', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -250,18 +254,18 @@ export const useAiStore = create<AiState>((set) => ({
         candidateBubbles: data.candidateBubbles || [],
         suggestedNextActions: data.suggestedNextActions || [],
       }
-      set({ isLoading: false })
+      set({ isLoading: false, activeTaskLabel: null })
       return result
     } catch (error: unknown) {
-      set({ error: (error as Error).message, isLoading: false })
+      set({ error: (error as Error).message, isLoading: false, activeTaskLabel: null })
       return null
     }
   },
 
   sendChat: async (messages, onChunk) => {
-    set({ isLoading: true, error: null, chatStream: '' })
+    set({ isLoading: true, activeTaskLabel: '正在进行 AI 对话', error: null, chatStream: '' })
     try {
-      const response = await fetch('/api/ai/chat', {
+      const response = await apiFetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages, stream: true }),
@@ -302,10 +306,10 @@ export const useAiStore = create<AiState>((set) => ({
         }
       }
 
-      set({ isLoading: false })
+      set({ isLoading: false, activeTaskLabel: null })
       return fullContent
     } catch (error: unknown) {
-      set({ error: (error as Error).message, isLoading: false })
+      set({ error: (error as Error).message, isLoading: false, activeTaskLabel: null })
       return ''
     }
   },
@@ -313,11 +317,12 @@ export const useAiStore = create<AiState>((set) => ({
   clearError: () => set({ error: null }),
   clearCategorizeResult: () => set({ categorizeResult: null }),
   clearFollowUp: () => set({ followUpResult: null, activeFollowUpBubbleId: null, activeFollowUpBubbleIds: [] }),
+  setGlobalAiActivity: (isLoading, label = null) => set({ isLoading, activeTaskLabel: isLoading ? label : null }),
 
   followUp: async (bubbleContent, existingBubbles, options) => {
-    set({ isLoading: true, error: null, followUpResult: null })
+    set({ isLoading: true, activeTaskLabel: options?.mode === 'relationship' ? '正在分析气泡关系' : '正在生成 AI 追问', error: null, followUpResult: null })
     try {
-      const response = await fetch('/api/ai/followup', {
+      const response = await apiFetch('/api/ai/followup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bubbleContent, existingBubbles, ...options }),
@@ -333,7 +338,7 @@ export const useAiStore = create<AiState>((set) => ({
         question: data.question || '想进一步补充吗？',
         options: data.options || [],
       }
-      set({ followUpResult: result, isLoading: false })
+      set({ followUpResult: result, isLoading: false, activeTaskLabel: null })
       return result
     } catch (error: unknown) {
       const fallback: FollowUpResult = options?.mode === 'relationship'
@@ -379,7 +384,7 @@ export const useAiStore = create<AiState>((set) => ({
             },
           ],
         }
-      set({ error: (error as Error).message, followUpResult: fallback, isLoading: false })
+      set({ error: (error as Error).message, followUpResult: fallback, isLoading: false, activeTaskLabel: null })
       return fallback
     }
   },

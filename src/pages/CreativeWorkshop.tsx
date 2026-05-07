@@ -19,8 +19,8 @@ import { useBubbleStore } from '@/stores/bubbleStore'
 import { useWorkshopStore, type WorkshopSkillId } from '@/stores/workshopStore'
 
 const SKILL_ACCENT: Record<WorkshopSkillId, string> = {
-  'idea-to-bubbles': '#e02617',
-  'prd-to-bubbles': '#0891b2',
+  'idea-to-bubbles': '#ad2c0d',
+  'prd-to-bubbles': '#0f8a9d',
 }
 
 export default function CreativeWorkshop() {
@@ -142,32 +142,35 @@ export default function CreativeWorkshop() {
 
   return (
     <div className="h-screen bg-background dot-grid-bg relative overflow-hidden">
-      <div className="blob-bg w-[500px] h-[500px] bg-primary-fixed/45 top-[-170px] left-[18%] animate-blob-drift" />
-      <div className="blob-bg w-[420px] h-[420px] bg-secondary-container/42 bottom-[-150px] left-[-90px] animate-blob-drift" style={{ animationDelay: '-8s' }} />
-      <div className="blob-bg w-[360px] h-[360px] bg-tertiary-fixed/35 top-[30%] right-[-80px] animate-blob-drift" style={{ animationDelay: '-13s' }} />
-
       <div className="relative z-10 h-full p-6">
-        <section className="absolute left-6 top-20 bottom-6 w-[320px] floating-window rounded-[32px] p-5 overflow-hidden flex flex-col">
+        <section className="absolute left-6 top-20 bottom-6 w-[320px] floating-window liquid-vessel rounded-[32px] p-5 overflow-hidden flex flex-col">
           <div className="mb-4 flex items-center gap-2">
-            <Boxes size={17} className="text-primary" />
+            <Boxes size={17} className="text-secondary" />
             <div>
               <div className="text-[15px] font-semibold text-on-surface">创意工坊</div>
               <div className="text-[11px] text-outline">{enabledSkills.length} 个可用 skill</div>
             </div>
           </div>
 
-          <div className="space-y-2 overflow-y-auto pr-1">
+          <div className="edge-fade-scroll-soft space-y-2 overflow-y-auto pr-1 pb-8">
             {skills.map((skill) => {
               const active = activeSkillId === skill.id
               return (
                 <button
                   key={skill.id}
                   onClick={() => setActiveSkill(skill.id)}
-                  className={`w-full rounded-[24px] p-3 text-left ring-1 transition-all ${
+                  className={`w-full rounded-[24px] border p-3 text-left ring-1 transition-all ${
                     active
-                      ? 'bg-primary-fixed/42 text-primary ring-primary/25'
-                      : 'bg-white/38 text-on-surface-variant ring-white/55 hover:bg-white/55 hover:text-on-surface'
+                      ? 'text-on-surface'
+                      : 'border-white/45 bg-white/38 text-on-surface-variant ring-white/55 hover:bg-white/55 hover:text-on-surface'
                   }`}
+                  style={active
+                    ? {
+                      backgroundColor: `${SKILL_ACCENT[skill.id]}10`,
+                      borderColor: `${SKILL_ACCENT[skill.id]}33`,
+                      boxShadow: `inset 0 1px 1px rgba(255,255,255,.56), 0 14px 36px ${SKILL_ACCENT[skill.id]}16`,
+                    }
+                    : undefined}
                 >
                   <div className="flex items-start gap-2">
                     <span
@@ -187,8 +190,9 @@ export default function CreativeWorkshop() {
                             toggleSkill(skill.id)
                           }}
                           className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                            skill.enabled ? 'bg-primary-fixed/50 text-primary' : 'bg-white/50 text-outline'
+                            skill.enabled ? 'bg-white/58' : 'bg-white/50 text-outline'
                           }`}
+                          style={skill.enabled ? { color: SKILL_ACCENT[skill.id] } : undefined}
                         >
                           {skill.enabled ? '已启用' : '已停用'}
                         </span>
@@ -201,12 +205,12 @@ export default function CreativeWorkshop() {
           </div>
         </section>
 
-        <section className="absolute left-[370px] right-6 top-20 bottom-6 floating-window rounded-[32px] overflow-hidden flex">
-          <div className="w-[44%] min-w-[360px] border-r border-outline-variant/20 p-6 overflow-y-auto">
+        <section className="absolute left-[370px] right-6 top-20 bottom-6 floating-window liquid-vessel rounded-[32px] overflow-hidden flex">
+          <div className="edge-fade-scroll-soft w-[44%] min-w-[360px] border-r border-outline-variant/20 p-6 overflow-y-auto">
             <div className="mb-5 flex items-center gap-2">
               {activeSkillId === 'idea-to-bubbles'
-                ? <WandSparkles size={18} className="text-primary" />
-                : <FileText size={18} className="text-primary" />}
+                ? <WandSparkles size={18} style={{ color: SKILL_ACCENT[activeSkillId] }} />
+                : <FileText size={18} style={{ color: SKILL_ACCENT[activeSkillId] }} />}
               <div>
                 <div className="text-[16px] font-semibold text-on-surface">{activeSkill?.name}</div>
                 <div className="text-[12px] text-outline">{activeSkill?.enabled ? 'AI 实时运行' : '当前已停用'}</div>
@@ -268,7 +272,7 @@ export default function CreativeWorkshop() {
                     <div className="space-y-2">
                       {skillResult.clarificationQuestions.map((question) => (
                         <label key={question.id} className="block">
-                          <span className="mb-1 block text-[11px] font-semibold text-primary">{question.label}</span>
+                          <span className="mb-1 block text-[11px] font-semibold" style={{ color: SKILL_ACCENT[activeSkillId] }}>{question.label}</span>
                           <span className="mb-1 block text-[12px] leading-5 text-on-surface">{question.question}</span>
                           {question.reason && (
                             <span className="mb-1 block text-[11px] leading-4 text-outline">{question.reason}</span>
@@ -291,7 +295,7 @@ export default function CreativeWorkshop() {
                     <button
                       onClick={() => runSkill(true)}
                       disabled={isLoading}
-                      className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-full bg-primary-fixed/55 text-[12px] font-semibold text-primary transition-all hover:bg-primary-fixed disabled:cursor-not-allowed disabled:opacity-40"
+                      className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-full bg-secondary-container/45 text-[12px] font-semibold text-secondary transition-all hover:bg-secondary-container disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {isLoading ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
                       吸收确认并更新预览
@@ -312,21 +316,21 @@ export default function CreativeWorkshop() {
 
             {createdIds.length > 0 && (
               <div className="mt-4 rounded-[22px] bg-white/40 p-3 text-[12px] text-on-surface-variant ring-1 ring-white/55">
-                <div className="flex items-center gap-2 font-semibold text-primary">
+                <div className="flex items-center gap-2 font-semibold text-secondary">
                   <PackageCheck size={14} />
                   已生成 {createdIds.length} 个气泡
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <button
                     onClick={goToCanvas}
-                    className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-white/45 text-[11px] font-semibold text-on-surface transition-all hover:bg-primary-fixed/45 hover:text-primary"
+                    className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-white/45 text-[11px] font-semibold text-on-surface transition-all hover:bg-secondary-container/45 hover:text-secondary"
                   >
                     <SquareArrowOutUpRight size={12} />
                     回到画布
                   </button>
                   <button
                     onClick={goToPrdOutput}
-                    className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-primary-fixed/60 text-[11px] font-semibold text-primary transition-all hover:bg-primary-fixed"
+                    className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-secondary-container/55 text-[11px] font-semibold text-secondary transition-all hover:bg-secondary-container"
                   >
                     <ArrowRight size={12} />
                     进入 PRD
@@ -336,7 +340,7 @@ export default function CreativeWorkshop() {
             )}
           </div>
 
-          <div className="min-w-0 flex-1 p-6 overflow-y-auto">
+          <div className="edge-fade-scroll-soft min-w-0 flex-1 p-6 overflow-y-auto">
             <div className="mb-4 flex items-center justify-between">
               <div className="text-[15px] font-semibold text-on-surface">输出预览</div>
               <div className="text-[11px] text-outline">{previewBubbles.length} 个候选气泡</div>
@@ -353,7 +357,7 @@ export default function CreativeWorkshop() {
               <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
                 {previewBubbles.map((bubble, index) => (
                   <div key={`${bubble.title}-${bubble.content}-${index}`} className="rounded-[24px] bg-white/44 p-4 ring-1 ring-white/60">
-                    <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold text-primary">
+                    <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold text-secondary">
                       <Check size={12} />
                       气泡 {index + 1} · {bubble.title}
                     </div>

@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import MainNavigation from "@/components/MainNavigation";
 import Navigation from "@/components/Navigation";
+import GlobalAIActivity from "@/components/GlobalAIActivity";
 import BubbleSpace from "@/pages/BubbleSpace";
 import ContextManager from "@/pages/ContextManager";
 import PrdOutput from "@/pages/PrdOutput";
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/workshop" element={<CreativeWorkshop />} />
           </Routes>
         </main>
+        <GlobalAIActivity />
       </div>
     </Router>
   );

@@ -1,4 +1,5 @@
 import type { Bubble, BubbleExtension, Category } from '@/stores/bubbleStore'
+import { apiFetch } from '@/lib/apiClient'
 import {
   createFallbackCognition,
   type SnapshotCognition,
@@ -44,7 +45,7 @@ export async function requestSnapshotCognition(
   const fallback = createFallbackCognition(bubbles)
 
   try {
-    const response = await fetch('/api/ai/snapshot', {
+    const response = await apiFetch('/api/ai/snapshot', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

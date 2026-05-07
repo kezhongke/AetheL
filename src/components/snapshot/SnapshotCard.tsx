@@ -80,7 +80,7 @@ export default function SnapshotCard({
   }
 
   return (
-    <div className="glass-panel p-4 hover:shadow-glass-hover transition-all group">
+    <div className="glass-panel overflow-hidden p-4 hover:shadow-glass-hover transition-all group">
       <div className="flex items-start justify-between gap-4">
         <button onClick={onToggleExpand} className="flex-1 text-left">
           <div className="flex items-center gap-2 flex-wrap">

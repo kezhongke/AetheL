@@ -288,7 +288,7 @@ export default function PrdOutput() {
     const jsPDF = (await import('jspdf')).default
 
     const canvas = await html2canvas(previewRef.current, {
-      backgroundColor: '#fff8f6',
+      backgroundColor: '#fffaf4',
       scale: 2,
     })
     const imgData = canvas.toDataURL('image/png')
@@ -301,15 +301,11 @@ export default function PrdOutput() {
 
   return (
     <div className="h-screen bg-background dot-grid-bg relative overflow-hidden">
-      <div className="blob-bg w-[520px] h-[520px] bg-primary-fixed/50 top-[-180px] left-[28%] animate-blob-drift" />
-      <div className="blob-bg w-[420px] h-[420px] bg-secondary-container/45 bottom-[-140px] left-[-100px] animate-blob-drift" style={{ animationDelay: '-8s' }} />
-      <div className="blob-bg w-[360px] h-[360px] bg-tertiary-fixed/35 top-[35%] right-[-80px] animate-blob-drift" style={{ animationDelay: '-13s' }} />
-
       {combinedContent && (
         <div
           ref={previewRef}
           aria-hidden="true"
-          className="fixed -left-[10000px] top-0 w-[820px] bg-[#fff8f6] p-8 prose prose-stone prose-sm max-w-none"
+          className="fixed -left-[10000px] top-0 w-[820px] bg-[#fffaf4] p-8 prose prose-stone prose-sm max-w-none"
         >
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{combinedContent}</ReactMarkdown>
         </div>
@@ -317,11 +313,11 @@ export default function PrdOutput() {
 
       <div className="relative z-10 h-full p-6">
         <div className="absolute left-6 top-20 bottom-6 w-[340px] z-10">
-          <section className="floating-window h-full rounded-[32px] flex flex-col overflow-hidden">
+          <section className="floating-window liquid-vessel h-full rounded-[32px] flex flex-col overflow-hidden">
             <div className="px-5 py-4 border-b border-white/35">
               <div className="flex items-center justify-between">
                 <span className="text-[15px] text-on-surface font-semibold">选择气泡</span>
-                <button onClick={selectAll} className="rounded-full px-2 py-1 text-[11px] font-semibold text-primary transition-all hover:bg-primary-fixed/45">
+                <button onClick={selectAll} className="rounded-full px-2 py-1 text-[11px] font-semibold text-primary transition-all hover:bg-primary-fixed/35">
                   {selectedBubbleIds.size === bubbles.length ? '取消全选' : '全选'}
                 </button>
               </div>
@@ -329,26 +325,26 @@ export default function PrdOutput() {
                 已选 {selectedBubbleIds.size} / {bubbles.length}
               </div>
               {cameFromWorkshop && selectedBubbleIds.size > 0 && (
-                <div className="mt-2 rounded-[18px] bg-primary-fixed/35 px-3 py-2 text-[11px] leading-4 text-primary">
+                <div className="mt-2 rounded-[18px] bg-secondary-container/32 px-3 py-2 text-[11px] leading-4 text-secondary">
                   已接收工坊生成的 {selectedBubbleIds.size} 个气泡，可直接生成 PRD 或继续微调选择。
                 </div>
               )}
               <button
                 onClick={goToPrdWorkshop}
-                className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-full bg-white/34 text-[12px] font-semibold text-on-surface-variant ring-1 ring-white/60 transition-all hover:bg-primary-fixed/42 hover:text-primary"
+                className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-full bg-white/38 text-[12px] font-semibold text-on-surface-variant ring-1 ring-white/60 transition-all hover:bg-secondary-container/35 hover:text-secondary"
               >
                 <WandSparkles size={13} />
                 已有 PRD 草稿？先拆成气泡
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto py-2">
+            <div className="edge-fade-scroll flex-1 overflow-y-auto py-2">
               {bubbles.length === 0 ? (
                 <div className="px-5 py-8 text-center text-[13px] text-outline">
                   <div>暂无气泡，请先在灵感空间创建</div>
                   <button
                     onClick={goToPrdWorkshop}
-                    className="mt-4 inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-primary-fixed/45 px-4 text-[12px] font-semibold text-primary transition-all hover:bg-primary-fixed"
+                    className="mt-4 inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-secondary-container/45 px-4 text-[12px] font-semibold text-secondary transition-all hover:bg-secondary-container"
                   >
                     <WandSparkles size={13} />
                     拆解 PRD 草稿
@@ -397,9 +393,10 @@ export default function PrdOutput() {
                                   onClick={() => toggleBubble(bubble.id)}
                                   className={`w-full rounded-[18px] px-2.5 py-2 text-left text-[12px] transition-all ${
                                     selected
-                                      ? 'bg-primary-fixed/36 text-primary shadow-glass'
+                                      ? 'text-on-surface shadow-glass'
                                       : 'text-on-surface-variant hover:bg-white/55 hover:text-on-surface'
                                   }`}
+                                  style={selected ? { backgroundColor: `${group.color}12` } : undefined}
                                 >
                                   <div className="flex items-start gap-2">
                                     <span
@@ -447,10 +444,10 @@ export default function PrdOutput() {
           </section>
         </div>
 
-        <section className="absolute left-[370px] right-6 top-20 bottom-6 z-10 floating-window rounded-[32px] overflow-hidden flex flex-col">
+        <section className="absolute left-[370px] right-6 top-20 bottom-6 z-10 floating-window liquid-vessel rounded-[32px] overflow-hidden flex flex-col">
           <div className="px-7 py-5 border-b border-white/35 flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <div className="text-[17px] font-semibold text-on-surface">PRD 输出中心</div>
+            <div className="min-w-[132px]">
+              <div className="whitespace-nowrap text-[17px] font-semibold text-on-surface">PRD 输出中心</div>
               <div className="text-[12px] text-outline truncate">按标签归束气泡，生成可编辑的结构化 PRD 草稿</div>
             </div>
 
@@ -485,7 +482,7 @@ export default function PrdOutput() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-7 py-6">
+          <div className="edge-fade-scroll-soft flex-1 overflow-y-auto px-7 py-6">
             {sectionDrafts.length > 0 ? (
               <div className="space-y-5">
                 {sectionDrafts
@@ -514,7 +511,7 @@ export default function PrdOutput() {
                         <button
                           onClick={() => moveSection(section.id, -1)}
                           disabled={index === 0}
-                          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/30 text-outline transition-all hover:bg-primary-fixed/45 hover:text-primary disabled:cursor-not-allowed disabled:opacity-30"
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/34 text-outline transition-all hover:bg-secondary-container/45 hover:text-secondary disabled:cursor-not-allowed disabled:opacity-30"
                           title="上移章节"
                         >
                           <ChevronUp size={13} />
@@ -522,7 +519,7 @@ export default function PrdOutput() {
                         <button
                           onClick={() => moveSection(section.id, 1)}
                           disabled={index === orderedSections.length - 1}
-                          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/30 text-outline transition-all hover:bg-primary-fixed/45 hover:text-primary disabled:cursor-not-allowed disabled:opacity-30"
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/34 text-outline transition-all hover:bg-secondary-container/45 hover:text-secondary disabled:cursor-not-allowed disabled:opacity-30"
                           title="下移章节"
                         >
                           <ChevronDown size={13} />
@@ -541,7 +538,7 @@ export default function PrdOutput() {
             ) : selectedGroups.length > 0 ? (
               <div className="space-y-4">
                 <div className="mb-1 flex items-center gap-2 text-[13px] font-semibold text-on-surface">
-                  <Layers3 size={15} className="text-primary" />
+                  <Layers3 size={15} className="text-secondary" />
                   将生成 {selectedGroups.length} 个 PRD 章节
                 </div>
                 {selectedGroups.map((group) => (
@@ -575,7 +572,7 @@ export default function PrdOutput() {
                 <p className="text-outline text-[11px] mt-1">AI 将按标签归束生成可编辑 PRD 章节</p>
                 <button
                   onClick={goToPrdWorkshop}
-                  className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-full bg-white/48 px-5 text-[12px] font-semibold text-on-surface-variant ring-1 ring-white/65 transition-all hover:bg-primary-fixed/45 hover:text-primary"
+                  className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-full bg-white/48 px-5 text-[12px] font-semibold text-on-surface-variant ring-1 ring-white/65 transition-all hover:bg-secondary-container/45 hover:text-secondary"
                 >
                   <WandSparkles size={14} />
                   先拆解已有 PRD 草稿

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Brain, Camera, Check, Loader2, Plus, Sparkles, X } from 'lucide-react'
 import SnapshotCard from '@/components/snapshot/SnapshotCard'
 import { requestSnapshotCognition } from '@/lib/snapshotCognition'
+import { useAiStore } from '@/stores/aiStore'
 import { useBubbleStore } from '@/stores/bubbleStore'
 import { useSnapshotStore } from '@/stores/snapshotStore'
 
@@ -25,6 +26,7 @@ function formatTime(iso: string) {
 export default function SnapshotPanel({ onClose, embedded = false, contained = false, selectedBubbleIds = [] }: SnapshotPanelProps) {
   const { bubbles, categories, viewport, extensions, relations, filterTag } = useBubbleStore()
   const { snapshots, createSnapshot, restoreSnapshot, deleteSnapshot } = useSnapshotStore()
+  const setGlobalAiActivity = useAiStore((state) => state.setGlobalAiActivity)
   const [snapshotName, setSnapshotName] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [isArchitecting, setIsArchitecting] = useState(false)
@@ -79,20 +81,25 @@ export default function SnapshotPanel({ onClose, embedded = false, contained = f
   const handleCreateSnapshot = async () => {
     if (selectedBubbles.length === 0 || isArchitecting) return
     setIsArchitecting(true)
+    setGlobalAiActivity(true, '正在生成认知快照')
 
-    const selectedBubbleIdsList = selectedBubbles.map((bubble) => bubble.id)
-    const selectedRelations = relations.filter(
-      (relation) => selectedBubbleIdsList.includes(relation.sourceId) && selectedBubbleIdsList.includes(relation.targetId),
-    )
-    const selectedExtensions = extensions.filter((extension) => selectedBubbleIdsList.includes(extension.bubbleId))
-    const cognition = await requestSnapshotCognition(selectedBubbles, selectedExtensions, categories)
-    const name = snapshotName.trim() || `快照 ${snapshots.length + 1}`
+    try {
+      const selectedBubbleIdsList = selectedBubbles.map((bubble) => bubble.id)
+      const selectedRelations = relations.filter(
+        (relation) => selectedBubbleIdsList.includes(relation.sourceId) && selectedBubbleIdsList.includes(relation.targetId),
+      )
+      const selectedExtensions = extensions.filter((extension) => selectedBubbleIdsList.includes(extension.bubbleId))
+      const cognition = await requestSnapshotCognition(selectedBubbles, selectedExtensions, categories)
+      const name = snapshotName.trim() || `快照 ${snapshots.length + 1}`
 
-    createSnapshot(name, selectedBubbles, viewport, categories, cognition, selectedRelations, selectedExtensions)
+      createSnapshot(name, selectedBubbles, viewport, categories, cognition, selectedRelations, selectedExtensions)
 
-    setSnapshotName('')
-    setIsCreating(false)
-    setIsArchitecting(false)
+      setSnapshotName('')
+      setIsCreating(false)
+    } finally {
+      setIsArchitecting(false)
+      setGlobalAiActivity(false)
+    }
   }
 
   const handleRestore = (id: string) => {
