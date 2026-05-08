@@ -4,9 +4,9 @@ title: "情绪花朵生成器；能够在人需要的时候，直接生成一束
 tag: "创意工坊"
 categoryId: "movn2tx1tuhtten1r"
 color: "#0891b2"
-interactionWeight: 26
+interactionWeight: 30
 createdAt: "2026-05-06T06:44:15.109Z"
-updatedAt: "2026-05-08T03:22:14.670Z"
+updatedAt: "2026-05-08T03:38:32.722Z"
 extensions: []
 ---
 
@@ -30,10 +30,10 @@ No extensions yet.
     "categoryId": "movn2tx1tuhtten1r",
     "x": -8.000957317762104,
     "y": -307.5564065964117,
-    "interactionWeight": 26,
+    "interactionWeight": 30,
     "createdAt": "2026-05-06T06:44:15.109Z",
-    "updatedAt": "2026-05-08T03:22:14.670Z",
-    "prdUsageCount": 6
+    "updatedAt": "2026-05-08T03:38:32.722Z",
+    "prdUsageCount": 7
   },
   "extensions": []
 }

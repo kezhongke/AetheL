@@ -4,9 +4,9 @@ title: "关键假设：情绪错位容忍度存在阈值——轻度错位（如
 tag: "风险假设"
 categoryId: "movn2tx1nbuyb7hyv"
 color: "#64748b"
-interactionWeight: 26
+interactionWeight: 30
 createdAt: "2026-05-06T06:44:15.110Z"
-updatedAt: "2026-05-08T02:53:42.743Z"
+updatedAt: "2026-05-08T03:38:32.722Z"
 extensions: []
 ---
 
@@ -30,10 +30,10 @@ No extensions yet.
     "categoryId": "movn2tx1nbuyb7hyv",
     "x": -430,
     "y": 310,
-    "interactionWeight": 26,
+    "interactionWeight": 30,
     "createdAt": "2026-05-06T06:44:15.110Z",
-    "updatedAt": "2026-05-08T02:53:42.743Z",
-    "prdUsageCount": 6
+    "updatedAt": "2026-05-08T03:38:32.722Z",
+    "prdUsageCount": 7
   },
   "extensions": []
 }
