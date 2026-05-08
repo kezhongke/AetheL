@@ -323,6 +323,55 @@
     transform: scale(0.97);
   }
 
+  .surface-list-card {
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.28)),
+      radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.42), transparent 34%);
+    border: 1px solid rgba(255, 255, 255, 0.58);
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.56),
+      inset 0 -10px 22px rgba(62, 102, 89, 0.035),
+      0 1px 0 rgba(255, 255, 255, 0.32);
+  }
+
+  .surface-list-card:hover {
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0.34)),
+      radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.48), transparent 34%);
+    border-color: rgba(255, 255, 255, 0.68);
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.62),
+      inset 0 -10px 22px rgba(62, 102, 89, 0.04),
+      0 6px 18px rgba(62, 102, 89, 0.045);
+  }
+
+  .selectable-bubble-card {
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.50), rgba(255, 255, 255, 0.34)),
+      linear-gradient(135deg, var(--bubble-tint, rgba(148, 163, 184, 0.08)), transparent 68%);
+    border: 1px solid var(--bubble-border, rgba(148, 163, 184, 0.34));
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.56),
+      0 1px 0 rgba(255, 255, 255, 0.28);
+  }
+
+  .selectable-bubble-card:hover {
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.60), rgba(255, 255, 255, 0.42)),
+      linear-gradient(135deg, var(--bubble-tint, rgba(148, 163, 184, 0.12)), transparent 68%);
+    border-color: var(--bubble-border-strong, rgba(148, 163, 184, 0.52));
+  }
+
+  .selectable-bubble-card.is-selected {
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.44)),
+      linear-gradient(135deg, var(--bubble-tint-selected, rgba(148, 163, 184, 0.14)), transparent 70%);
+    border-color: var(--bubble-border-selected, rgba(148, 163, 184, 0.68));
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.62),
+      0 0 0 2px var(--bubble-focus, rgba(148, 163, 184, 0.10));
+  }
+
   .prd-section-card {
     background:
       linear-gradient(135deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.28) 54%, rgba(192, 236, 220, 0.13)),

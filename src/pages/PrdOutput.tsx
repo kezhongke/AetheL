@@ -358,7 +358,11 @@ export default function PrdOutput() {
                     const collapsed = collapsedGroups.has(group.id)
 
                     return (
-                      <section key={group.id} className="overflow-hidden rounded-[24px] bg-white/34 ring-1 ring-white/55 transition-all hover:bg-white/42">
+                      <section
+                        key={group.id}
+                        className="surface-list-card overflow-hidden rounded-[24px] transition-all"
+                        style={{ borderColor: `${group.color}26` }}
+                      >
                         <div className="flex items-center gap-2 px-3 py-3">
                           <button
                             onClick={() => toggleGroup(group)}
@@ -391,12 +395,19 @@ export default function PrdOutput() {
                                 <button
                                   key={bubble.id}
                                   onClick={() => toggleBubble(bubble.id)}
-                                  className={`w-full rounded-[18px] px-2.5 py-2 text-left text-[12px] transition-all ${
+                                  className={`selectable-bubble-card w-full rounded-[18px] px-2.5 py-2 text-left text-[12px] transition-all ${
                                     selected
-                                      ? 'text-on-surface shadow-glass'
-                                      : 'text-on-surface-variant hover:bg-white/55 hover:text-on-surface'
+                                      ? 'is-selected text-on-surface'
+                                      : 'text-on-surface-variant hover:text-on-surface'
                                   }`}
-                                  style={selected ? { backgroundColor: `${group.color}12` } : undefined}
+                                  style={{
+                                    '--bubble-border': `${group.color}40`,
+                                    '--bubble-border-strong': `${group.color}60`,
+                                    '--bubble-border-selected': `${group.color}8a`,
+                                    '--bubble-focus': `${group.color}12`,
+                                    '--bubble-tint': `${group.color}0d`,
+                                    '--bubble-tint-selected': `${group.color}18`,
+                                  } as React.CSSProperties}
                                 >
                                   <div className="flex items-start gap-2">
                                     <span

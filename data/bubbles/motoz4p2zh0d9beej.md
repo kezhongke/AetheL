@@ -1,18 +1,18 @@
 ---
 id: "motoz4p2zh0d9beej"
-title: "接收陌生人花朵时可选择回应或传递，形成情绪流动的可视化网络"
+title: "情绪传递网络：基于已生成的情绪语义花朵（规则库翻译）和生长阶段（时间/互动沉淀），接收陌生人花朵"
 tag: "产品模块"
 categoryId: "movn2tx1it2qmsmtc"
 color: "#e11d48"
-interactionWeight: 16
+interactionWeight: 24
 createdAt: "2026-05-06T06:44:15.110Z"
-updatedAt: "2026-05-07T15:26:40.885Z"
+updatedAt: "2026-05-08T03:03:53.598Z"
 extensions: []
 ---
 
 # Bubble
 
-接收陌生人花朵时可选择回应或传递，形成情绪流动的可视化网络
+情绪传递网络：基于已生成的情绪语义花朵（规则库翻译）和生长阶段（时间/互动沉淀），接收陌生人花朵时可选择回应或传递，形成可追溯、可解读的情绪流动可视化网络
 
 ## Follow-up Extensions
 
@@ -24,16 +24,16 @@ No extensions yet.
 {
   "bubble": {
     "id": "motoz4p2zh0d9beej",
-    "content": "接收陌生人花朵时可选择回应或传递，形成情绪流动的可视化网络",
+    "content": "情绪传递网络：基于已生成的情绪语义花朵（规则库翻译）和生长阶段（时间/互动沉淀），接收陌生人花朵时可选择回应或传递，形成可追溯、可解读的情绪流动可视化网络",
     "tag": "产品模块",
     "color": "#e11d48",
     "categoryId": "movn2tx1it2qmsmtc",
     "x": -430,
     "y": 86,
-    "interactionWeight": 16,
+    "interactionWeight": 24,
     "createdAt": "2026-05-06T06:44:15.110Z",
-    "updatedAt": "2026-05-07T15:26:40.885Z",
-    "prdUsageCount": 4
+    "updatedAt": "2026-05-08T03:03:53.598Z",
+    "prdUsageCount": 6
   },
   "extensions": []
 }

@@ -159,16 +159,16 @@ export default function CreativeWorkshop() {
                 <button
                   key={skill.id}
                   onClick={() => setActiveSkill(skill.id)}
-                  className={`w-full rounded-[24px] border p-3 text-left ring-1 transition-all ${
+                  className={`surface-list-card w-full rounded-[24px] p-3 text-left transition-all ${
                     active
                       ? 'text-on-surface'
-                      : 'border-white/45 bg-white/38 text-on-surface-variant ring-white/55 hover:bg-white/55 hover:text-on-surface'
+                      : 'text-on-surface-variant hover:text-on-surface'
                   }`}
                   style={active
                     ? {
                       backgroundColor: `${SKILL_ACCENT[skill.id]}10`,
-                      borderColor: `${SKILL_ACCENT[skill.id]}33`,
-                      boxShadow: `inset 0 1px 1px rgba(255,255,255,.56), 0 14px 36px ${SKILL_ACCENT[skill.id]}16`,
+                      borderColor: `${SKILL_ACCENT[skill.id]}3d`,
+                      boxShadow: `inset 0 1px 1px rgba(255,255,255,.62), 0 0 0 2px ${SKILL_ACCENT[skill.id]}0f`,
                     }
                     : undefined}
                 >
@@ -356,7 +356,15 @@ export default function CreativeWorkshop() {
             ) : (
               <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
                 {previewBubbles.map((bubble, index) => (
-                  <div key={`${bubble.title}-${bubble.content}-${index}`} className="rounded-[24px] bg-white/44 p-4 ring-1 ring-white/60">
+                  <div
+                    key={`${bubble.title}-${bubble.content}-${index}`}
+                    className="selectable-bubble-card rounded-[24px] p-4"
+                    style={{
+                      '--bubble-border': `${SKILL_ACCENT[activeSkillId]}38`,
+                      '--bubble-border-strong': `${SKILL_ACCENT[activeSkillId]}58`,
+                      '--bubble-tint': `${SKILL_ACCENT[activeSkillId]}0b`,
+                    } as React.CSSProperties}
+                  >
                     <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold text-secondary">
                       <Check size={12} />
                       气泡 {index + 1} · {bubble.title}

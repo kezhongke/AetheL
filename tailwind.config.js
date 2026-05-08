@@ -90,8 +90,8 @@ export default {
         },
       },
       boxShadow: {
-        'glass': '0 8px 32px rgba(217, 35, 15, 0.06)',
-        'glass-hover': '0 12px 40px rgba(217, 35, 15, 0.10)',
+        'glass': '0 8px 24px rgba(62, 102, 89, 0.055)',
+        'glass-hover': '0 10px 28px rgba(62, 102, 89, 0.08)',
         'glow-primary': '0 8px 24px rgba(217, 35, 15, 0.22)',
         'glow-tertiary': '0 8px 24px rgba(116, 113, 145, 0.16)',
       },

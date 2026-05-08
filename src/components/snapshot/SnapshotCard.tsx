@@ -27,7 +27,7 @@ export default function SnapshotCard({
 }: SnapshotCardProps) {
   if (compact) {
     return (
-      <div className="group relative overflow-hidden rounded-[26px] bg-white/42 p-3.5 ring-1 ring-white/60 transition-all hover:shadow-glass-hover">
+      <div className="surface-list-card group relative overflow-hidden rounded-[26px] p-3.5 transition-all">
         <div className="absolute right-2.5 top-2.5 flex items-center gap-0.5">
           <button
             onClick={onRestore}
@@ -80,7 +80,7 @@ export default function SnapshotCard({
   }
 
   return (
-    <div className="glass-panel overflow-hidden p-4 hover:shadow-glass-hover transition-all group">
+    <div className="surface-list-card overflow-hidden rounded-[26px] p-4 transition-all group">
       <div className="flex items-start justify-between gap-4">
         <button onClick={onToggleExpand} className="flex-1 text-left">
           <div className="flex items-center gap-2 flex-wrap">

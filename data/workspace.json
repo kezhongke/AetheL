@@ -148,15 +148,23 @@
       "before": "若生成花朵与用户真实情绪错位，会产生「被误解」的负面体验，比不生成更糟",
       "after": "关键假设：情绪错位容忍度存在阈值——轻度错位（如「焦虑」被识别为「不安」）可被校准机制修复，重度错位（如「悲伤」被识别为「愤怒」）将导致7日内流失率>40%。需验证：用户实际校准意愿 vs 强制校准的反感度权衡",
       "createdAt": "2026-05-07T15:57:00.199Z"
+    },
+    {
+      "id": "mowbzg8v41wnjim06",
+      "bubbleId": "motoz4p2zh0d9beej",
+      "type": "content",
+      "before": "接收陌生人花朵时可选择回应或传递，形成情绪流动的可视化网络",
+      "after": "情绪传递网络：基于已生成的情绪语义花朵（规则库翻译）和生长阶段（时间/互动沉淀），接收陌生人花朵时可选择回应或传递，形成可追溯、可解读的情绪流动可视化网络",
+      "createdAt": "2026-05-08T03:03:53.598Z"
     }
   ],
   "viewport": {
-    "x": 0,
-    "y": 21.5,
-    "zoom": 0.5871193548387097
+    "x": -19.546224419315486,
+    "y": 104.13780480205634,
+    "zoom": 0.36448493181922703
   },
   "filterTag": null,
-  "canvasMode": "edit",
+  "canvasMode": "pan",
   "bubbleLayout": {
     "motoz4p15vkt8cdok": {
       "x": -430,
@@ -164,17 +172,17 @@
       "color": "#4f46e5",
       "categoryId": "movn2tx1lbe5qid2y",
       "tag": "用户假设",
-      "interactionWeight": 16,
-      "updatedAt": "2026-05-07T15:26:40.885Z"
+      "interactionWeight": 26,
+      "updatedAt": "2026-05-08T02:53:42.743Z"
     },
     "motoz4p16jc123oku": {
-      "x": 0,
-      "y": -310,
+      "x": -8.000957317762104,
+      "y": -307.5564065964117,
       "color": "#0891b2",
       "categoryId": "movn2tx1tuhtten1r",
       "tag": "创意工坊",
-      "interactionWeight": 17,
-      "updatedAt": "2026-05-07T15:26:40.885Z"
+      "interactionWeight": 26,
+      "updatedAt": "2026-05-08T03:22:14.670Z"
     },
     "motoz4p1os6cjybhk": {
       "x": 430,
@@ -182,17 +190,17 @@
       "color": "#7c3aed",
       "categoryId": "movn2tx10bc007u0i",
       "tag": "价值主张",
-      "interactionWeight": 16,
-      "updatedAt": "2026-05-07T15:26:40.885Z"
+      "interactionWeight": 24,
+      "updatedAt": "2026-05-08T02:53:42.743Z"
     },
     "motoz4p1qdm24g6tc": {
-      "x": -430,
-      "y": -86,
+      "x": -393.6104494836063,
+      "y": -97.3818635690822,
       "color": "#e11d48",
       "categoryId": "movn2tx1it2qmsmtc",
       "tag": "产品模块",
-      "interactionWeight": 18,
-      "updatedAt": "2026-05-07T15:26:40.885Z"
+      "interactionWeight": 29,
+      "updatedAt": "2026-05-08T03:04:02.293Z"
     },
     "motoz4p1qfmla3kru": {
       "x": 430,
@@ -200,8 +208,8 @@
       "color": "#7c3aed",
       "categoryId": "movn2tx10bc007u0i",
       "tag": "价值主张",
-      "interactionWeight": 18,
-      "updatedAt": "2026-05-07T15:26:40.885Z"
+      "interactionWeight": 26,
+      "updatedAt": "2026-05-08T02:53:42.743Z"
     },
     "motoz4p1qrs3y8355": {
       "x": -430,
@@ -209,17 +217,17 @@
       "color": "#e11d48",
       "categoryId": "movn2tx1it2qmsmtc",
       "tag": "产品模块",
-      "interactionWeight": 16,
-      "updatedAt": "2026-05-07T15:26:40.885Z"
+      "interactionWeight": 24,
+      "updatedAt": "2026-05-08T02:53:42.743Z"
     },
     "motoz4p1t4npuav8c": {
-      "x": 0,
-      "y": -43,
+      "x": -11.474916706643583,
+      "y": -73.06414784691185,
       "color": "#d97706",
       "categoryId": "movn2tx17f4dq2u4b",
       "tag": "场景假设",
-      "interactionWeight": 17,
-      "updatedAt": "2026-05-07T15:26:40.885Z"
+      "interactionWeight": 27,
+      "updatedAt": "2026-05-08T03:04:33.176Z"
     },
     "motoz4p1tromqyngo": {
       "x": 0,
@@ -227,8 +235,8 @@
       "color": "#d97706",
       "categoryId": "movn2tx17f4dq2u4b",
       "tag": "场景假设",
-      "interactionWeight": 18,
-      "updatedAt": "2026-05-07T15:26:40.885Z"
+      "interactionWeight": 27,
+      "updatedAt": "2026-05-08T02:53:42.743Z"
     },
     "motoz4p2m4gsb8cbs": {
       "x": 430,
@@ -236,8 +244,8 @@
       "color": "#0f766e",
       "categoryId": "movn2tx15s60buifq",
       "tag": "验证计划",
-      "interactionWeight": 16,
-      "updatedAt": "2026-05-07T15:26:40.885Z"
+      "interactionWeight": 24,
+      "updatedAt": "2026-05-08T02:53:42.743Z"
     },
     "motoz4p2vy70r6umx": {
       "x": -430,
@@ -245,8 +253,8 @@
       "color": "#64748b",
       "categoryId": "movn2tx1nbuyb7hyv",
       "tag": "风险假设",
-      "interactionWeight": 18,
-      "updatedAt": "2026-05-07T15:57:00.199Z"
+      "interactionWeight": 26,
+      "updatedAt": "2026-05-08T02:53:42.743Z"
     },
     "motoz4p2ymuo97dap": {
       "x": 430,
@@ -254,8 +262,8 @@
       "color": "#0f766e",
       "categoryId": "movn2tx15s60buifq",
       "tag": "验证计划",
-      "interactionWeight": 16,
-      "updatedAt": "2026-05-07T15:26:40.885Z"
+      "interactionWeight": 24,
+      "updatedAt": "2026-05-08T02:53:42.743Z"
     },
     "motoz4p2zh0d9beej": {
       "x": -430,
@@ -263,9 +271,9 @@
       "color": "#e11d48",
       "categoryId": "movn2tx1it2qmsmtc",
       "tag": "产品模块",
-      "interactionWeight": 16,
-      "updatedAt": "2026-05-07T15:26:40.885Z"
+      "interactionWeight": 24,
+      "updatedAt": "2026-05-08T03:03:53.598Z"
     }
   },
-  "updatedAt": "2026-05-07T15:57:06.545Z"
+  "updatedAt": "2026-05-08T03:23:56.997Z"
 }
