@@ -6,9 +6,98 @@ dotenv.config()
 
 const router = Router()
 
-const client = new OpenAI({
-  baseURL: 'https://api-inference.modelscope.cn/v1',
-  apiKey: process.env.MODELSCOPE_API_KEY,
+type AIProvider = 'modelscope' | 'deepseek' | 'moonshot'
+
+interface AIConfig {
+  provider: AIProvider
+  baseURL: string
+  apiKey: string
+  model: string
+}
+
+function getAIConfigFromEnv(): AIConfig {
+  const provider = (process.env.AI_PROVIDER || 'moonshot') as AIProvider
+
+  const configs: Record<AIProvider, AIConfig> = {
+    modelscope: {
+      provider: 'modelscope',
+      baseURL: 'https://api-inference.modelscope.cn/v1',
+      apiKey: process.env.MODELSCOPE_API_KEY || '',
+      model: 'moonshotai/Kimi-K2.5',
+    },
+    deepseek: {
+      provider: 'deepseek',
+      baseURL: 'https://api.deepseek.com',
+      apiKey: process.env.DEEPSEEK_API_KEY || '',
+      model: 'deepseek-v4-pro',
+    },
+    moonshot: {
+      provider: 'moonshot',
+      baseURL: 'https://api.moonshot.cn/v1',
+      apiKey: process.env.MOONSHOT_API_KEY || '',
+      model: 'kimi-k2.6',
+    },
+  }
+
+  return configs[provider]
+}
+
+let aiConfig = getAIConfigFromEnv()
+let client = new OpenAI({
+  baseURL: aiConfig.baseURL,
+  apiKey: aiConfig.apiKey,
+})
+let defaultModel = aiConfig.model
+
+function recreateClient() {
+  aiConfig = getAIConfigFromEnv()
+  client = new OpenAI({
+    baseURL: aiConfig.baseURL,
+    apiKey: aiConfig.apiKey,
+  })
+  defaultModel = aiConfig.model
+}
+
+// API endpoint to update AI config from frontend
+router.post('/config', async (req: Request, res: Response) => {
+  try {
+    const { provider, apiKey, model } = req.body
+
+    if (provider && apiKey) {
+      const providers: Record<string, { baseURL: string; defaultModel: string }> = {
+        modelscope: { baseURL: 'https://api-inference.modelscope.cn/v1', defaultModel: 'moonshotai/Kimi-K2.5' },
+        deepseek: { baseURL: 'https://api.deepseek.com', defaultModel: 'deepseek-v4-pro' },
+        moonshot: { baseURL: 'https://api.moonshot.cn/v1', defaultModel: 'kimi-k2.6' },
+      }
+
+      const config = providers[provider]
+      if (config) {
+        client = new OpenAI({
+          baseURL: config.baseURL,
+          apiKey: apiKey,
+        })
+        defaultModel = model || config.defaultModel
+        aiConfig = { provider: provider as AIProvider, baseURL: config.baseURL, apiKey, model: defaultModel }
+
+        res.json({ success: true, message: 'AI 配置已更新' })
+        return
+      }
+    }
+
+    res.status(400).json({ success: false, error: 'Invalid configuration' })
+  } catch (error) {
+    res.status(500).json({ success: false, error: (error as Error).message })
+  }
+})
+
+// Get current AI config (without exposing API key)
+router.get('/config', (req: Request, res: Response) => {
+  res.json({
+    success: true,
+    provider: aiConfig.provider,
+    model: defaultModel,
+    hasApiKey: !!aiConfig.apiKey,
+  })
 })
 
 function parseJsonObject(content: string) {
@@ -37,7 +126,7 @@ router.post('/chat', async (req: Request, res: Response) => {
       res.setHeader('Connection', 'keep-alive')
 
       const response = await client.chat.completions.create({
-        model: 'moonshotai/Kimi-K2.5',
+        model: defaultModel,
         messages,
         stream: true,
       })
@@ -53,7 +142,7 @@ router.post('/chat', async (req: Request, res: Response) => {
       res.end()
     } else {
       const response = await client.chat.completions.create({
-        model: 'moonshotai/Kimi-K2.5',
+        model: defaultModel,
         messages,
         stream: false,
       })
@@ -112,7 +201,7 @@ ${bubbles.map((b: { id: string; content: string; tag?: string }) => `[${b.id}] $
 请对这些气泡进行归类分析。`
 
     const response = await client.chat.completions.create({
-      model: 'moonshotai/Kimi-K2.5',
+      model: defaultModel,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
@@ -224,7 +313,7 @@ ${skillInstruction}
     ].join('\n')
 
     const response = await client.chat.completions.create({
-      model: 'moonshotai/Kimi-K2.5',
+      model: defaultModel,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
@@ -337,7 +426,7 @@ ${modules ? `需要包含的模块：${modules.join('、')}` : ''}
     res.setHeader('Connection', 'keep-alive')
 
     const response = await client.chat.completions.create({
-      model: 'moonshotai/Kimi-K2.5',
+      model: defaultModel,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `请根据以下灵感气泡的详细内容生成PRD，不要只引用气泡ID，要吸收每个气泡的内容、标签和追问补充：\n\n${bubblesContent}` },
@@ -420,7 +509,7 @@ router.post('/generate-prd-sections', async (req: Request, res: Response) => {
 }`
 
     const response = await client.chat.completions.create({
-      model: 'moonshotai/Kimi-K2.5',
+      model: defaultModel,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `请根据以下分组气泡生成 PRD sections：\n\n${groupLines}` },
@@ -513,7 +602,7 @@ router.post('/snapshot', async (req: Request, res: Response) => {
       : '无'
 
     const response = await client.chat.completions.create({
-      model: 'moonshotai/Kimi-K2.5',
+      model: defaultModel,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `当前分类：\n${categoryLines}\n\n用户选择的气泡：\n${bubbleLines}` },
@@ -629,7 +718,7 @@ router.post('/followup', async (req: Request, res: Response) => {
 请针对这条灵感提出追问选项。`
 
     const response = await client.chat.completions.create({
-      model: 'moonshotai/Kimi-K2.5',
+      model: defaultModel,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },

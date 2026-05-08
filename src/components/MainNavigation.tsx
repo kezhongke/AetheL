@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { AlertCircle, Archive, CheckCircle2, FileText, Loader2, Puzzle, Sparkles } from 'lucide-react'
 import { usePersistenceStore } from '@/stores/persistenceStore'
 
@@ -25,9 +25,9 @@ export default function MainNavigation() {
 
   return (
     <nav className="fixed left-6 top-5 z-50 floating-window rounded-full p-1 flex items-center gap-0.5">
-      <div className="mr-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-white/75 ring-1 ring-white/75 shadow-glass">
+      <Link to="/settings" className="mr-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-white/75 ring-1 ring-white/75 shadow-glass hover:opacity-80 transition-opacity cursor-pointer">
         <img src="/aethel-logo-icon.png" alt="Aethel logo" className="h-[88%] w-[88%] object-contain" />
-      </div>
+      </Link>
       {navItems.map(({ to, icon: Icon, label }) => (
         <NavLink
           key={to}
