@@ -2,11 +2,11 @@
 id: "motoz4p2ymuo97dap"
 title: "招募50人描述近期情绪，分别用AI生成和设计师手动生成花朵，盲测匹配准确度"
 tag: "验证计划"
-categoryId: "movn2tx15s60buifq"
+categoryId: "mowjrhcro4fy0nsnz"
 color: "#0f766e"
-interactionWeight: 28
+interactionWeight: 32
 createdAt: "2026-05-06T06:44:15.110Z"
-updatedAt: "2026-05-08T03:38:32.722Z"
+updatedAt: "2026-05-08T06:48:32.397Z"
 extensions: []
 ---
 
@@ -27,13 +27,13 @@ No extensions yet.
     "content": "招募50人描述近期情绪，分别用AI生成和设计师手动生成花朵，盲测匹配准确度",
     "tag": "验证计划",
     "color": "#0f766e",
-    "categoryId": "movn2tx15s60buifq",
+    "categoryId": "mowjrhcro4fy0nsnz",
     "x": 430,
     "y": 43,
-    "interactionWeight": 28,
+    "interactionWeight": 32,
     "createdAt": "2026-05-06T06:44:15.110Z",
-    "updatedAt": "2026-05-08T03:38:32.722Z",
-    "prdUsageCount": 7
+    "updatedAt": "2026-05-08T06:48:32.397Z",
+    "prdUsageCount": 8
   },
   "extensions": []
 }

@@ -2,11 +2,11 @@
 id: "motoz4p1t4npuav8c"
 title: "用户深夜感到孤独/焦虑/小确幸时，主动打开App寻求即时情绪出口"
 tag: "场景假设"
-categoryId: "movn2tx17f4dq2u4b"
+categoryId: "mowjrhcrwkq3fa6ab"
 color: "#d97706"
-interactionWeight: 31
+interactionWeight: 35
 createdAt: "2026-05-06T06:44:15.109Z"
-updatedAt: "2026-05-08T03:38:32.722Z"
+updatedAt: "2026-05-08T06:48:32.397Z"
 extensions: []
 ---
 
@@ -27,13 +27,13 @@ No extensions yet.
     "content": "用户深夜感到孤独/焦虑/小确幸时，主动打开App寻求即时情绪出口",
     "tag": "场景假设",
     "color": "#d97706",
-    "categoryId": "movn2tx17f4dq2u4b",
-    "x": -11.474916706643583,
-    "y": -73.06414784691185,
-    "interactionWeight": 31,
+    "categoryId": "mowjrhcrwkq3fa6ab",
+    "x": 0,
+    "y": -43,
+    "interactionWeight": 35,
     "createdAt": "2026-05-06T06:44:15.109Z",
-    "updatedAt": "2026-05-08T03:38:32.722Z",
-    "prdUsageCount": 7
+    "updatedAt": "2026-05-08T06:48:32.397Z",
+    "prdUsageCount": 8
   },
   "extensions": []
 }

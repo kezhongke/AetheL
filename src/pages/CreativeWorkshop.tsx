@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   AlertCircle,
@@ -8,11 +8,14 @@ import {
   FileText,
   Loader2,
   PackageCheck,
+  Paperclip,
   Plus,
   RefreshCw,
   Sparkles,
   SquareArrowOutUpRight,
+  Upload,
   WandSparkles,
+  X,
 } from 'lucide-react'
 import { useAiStore, type WorkshopCandidateBubble } from '@/stores/aiStore'
 import { useBubbleStore } from '@/stores/bubbleStore'
@@ -23,14 +26,54 @@ const SKILL_ACCENT: Record<WorkshopSkillId, string> = {
   'prd-to-bubbles': '#0f8a9d',
 }
 
+const PRD_UPLOAD_ACCEPT = [
+  '.md',
+  '.markdown',
+  '.txt',
+  '.text',
+  '.html',
+  '.htm',
+  '.json',
+  '.csv',
+].join(',')
+
+const PRD_UPLOAD_MAX_BYTES = 2 * 1024 * 1024
+
+function getFileExtension(fileName: string) {
+  const match = fileName.toLowerCase().match(/\.([a-z0-9]+)$/)
+  return match?.[1] || ''
+}
+
+function normalizeUploadedPrdText(file: File, rawText: string) {
+  const extension = getFileExtension(file.name)
+  if (extension === 'html' || extension === 'htm' || file.type === 'text/html') {
+    const doc = new DOMParser().parseFromString(rawText, 'text/html')
+    return doc.body.textContent?.replace(/\n{3,}/g, '\n\n').trim() || rawText
+  }
+
+  if (extension === 'json' || file.type === 'application/json') {
+    try {
+      return JSON.stringify(JSON.parse(rawText), null, 2)
+    } catch {
+      return rawText
+    }
+  }
+
+  return rawText.replace(/\r\n/g, '\n').trim()
+}
+
 export default function CreativeWorkshop() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const prdFileInputRef = useRef<HTMLInputElement>(null)
   const { addBubble, setSelectedBubbleIds, setActiveBubble } = useBubbleStore()
   const { skills, activeSkillId, setActiveSkill, toggleSkill } = useWorkshopStore()
   const { runWorkshopSkill, isLoading, error, clearError } = useAiStore()
   const [ideaInput, setIdeaInput] = useState('')
   const [prdInput, setPrdInput] = useState('')
+  const [uploadedPrdFileName, setUploadedPrdFileName] = useState('')
+  const [uploadError, setUploadError] = useState('')
+  const [isReadingPrdFile, setIsReadingPrdFile] = useState(false)
   const [skillResult, setSkillResult] = useState<Awaited<ReturnType<typeof runWorkshopSkill>>>(null)
   const [confirmationAnswers, setConfirmationAnswers] = useState<Record<string, string>>({})
   const [confirmationNote, setConfirmationNote] = useState('')
@@ -56,6 +99,9 @@ export default function CreativeWorkshop() {
     setConfirmationAnswers({})
     setConfirmationNote('')
     setCreatedIds([])
+    setUploadedPrdFileName('')
+    setUploadError('')
+    setIsReadingPrdFile(false)
     clearError()
   }, [activeSkillId, clearError])
 
@@ -69,7 +115,58 @@ export default function CreativeWorkshop() {
     setConfirmationAnswers({})
     setConfirmationNote('')
     setCreatedIds([])
+    if (activeSkillId === 'prd-to-bubbles') {
+      setUploadError('')
+    }
     clearError()
+  }
+
+  const handlePrdFileUpload = async (file: File | undefined) => {
+    if (!file || activeSkillId !== 'prd-to-bubbles') return
+    const extension = getFileExtension(file.name)
+    const supportedExtensions = new Set(['md', 'markdown', 'txt', 'text', 'html', 'htm', 'json', 'csv'])
+
+    if (!supportedExtensions.has(extension) && !file.type.startsWith('text/') && file.type !== 'application/json') {
+      setUploadError('暂支持 Markdown、TXT、HTML、JSON、CSV 文本文件。')
+      if (prdFileInputRef.current) prdFileInputRef.current.value = ''
+      return
+    }
+
+    if (file.size > PRD_UPLOAD_MAX_BYTES) {
+      setUploadError('文件超过 2MB，请先精简后再上传。')
+      if (prdFileInputRef.current) prdFileInputRef.current.value = ''
+      return
+    }
+
+    setIsReadingPrdFile(true)
+    setUploadError('')
+
+    try {
+      const rawText = await file.text()
+      const normalizedText = normalizeUploadedPrdText(file, rawText)
+      if (!normalizedText.trim()) {
+        setUploadError('没有读取到可拆分的文本内容。')
+        return
+      }
+
+      setPrdInput(normalizedText)
+      setUploadedPrdFileName(file.name)
+      setSkillResult(null)
+      setConfirmationAnswers({})
+      setConfirmationNote('')
+      setCreatedIds([])
+      clearError()
+    } catch {
+      setUploadError('文件读取失败，请换一个文本格式文件。')
+    } finally {
+      setIsReadingPrdFile(false)
+      if (prdFileInputRef.current) prdFileInputRef.current.value = ''
+    }
+  }
+
+  const clearUploadedPrdFile = () => {
+    setUploadedPrdFileName('')
+    setUploadError('')
   }
 
   const runSkill = async (withConfirmation = false) => {
@@ -225,12 +322,51 @@ export default function CreativeWorkshop() {
                 placeholder="输入一句初步设想..."
               />
             ) : (
-              <textarea
-                value={prdInput}
-                onChange={(event) => updateInput(event.target.value)}
-                className="input-field min-h-[280px] w-full resize-none text-[13px] leading-6"
-                placeholder="粘贴 PRD 草稿或 Markdown 文档..."
-              />
+              <div className="space-y-3">
+                <input
+                  ref={prdFileInputRef}
+                  type="file"
+                  accept={PRD_UPLOAD_ACCEPT}
+                  className="hidden"
+                  onChange={(event) => handlePrdFileUpload(event.target.files?.[0])}
+                />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => prdFileInputRef.current?.click()}
+                    disabled={isReadingPrdFile || isLoading}
+                    className="flex h-10 items-center justify-center gap-2 rounded-full bg-white/45 px-4 text-[12px] font-semibold text-secondary ring-1 ring-secondary/18 transition-all hover:bg-secondary-container/45 disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    {isReadingPrdFile ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                    上传文档
+                  </button>
+                  {uploadedPrdFileName && (
+                    <div className="min-w-0 flex flex-1 items-center gap-1.5 rounded-full bg-white/42 px-3 py-2 text-[11px] text-on-surface-variant ring-1 ring-white/55">
+                      <Paperclip size={12} className="shrink-0 text-secondary" />
+                      <span className="min-w-0 flex-1 truncate">{uploadedPrdFileName}</span>
+                      <button
+                        type="button"
+                        onClick={clearUploadedPrdFile}
+                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-outline transition-all hover:bg-white/60 hover:text-on-surface"
+                        title="移除文件标记"
+                      >
+                        <X size={11} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {uploadError && (
+                  <div className="rounded-[18px] bg-error-container/55 px-3 py-2 text-[11px] leading-4 text-on-error-container ring-1 ring-error/15">
+                    {uploadError}
+                  </div>
+                )}
+                <textarea
+                  value={prdInput}
+                  onChange={(event) => updateInput(event.target.value)}
+                  className="input-field min-h-[240px] w-full resize-none text-[13px] leading-6"
+                  placeholder="粘贴 PRD 草稿或 Markdown 文档..."
+                />
+              </div>
             )}
 
             <button

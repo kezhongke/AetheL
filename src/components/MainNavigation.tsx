@@ -25,8 +25,8 @@ export default function MainNavigation() {
 
   return (
     <nav className="fixed left-6 top-5 z-50 floating-window rounded-full p-1 flex items-center gap-0.5">
-      <div className="mr-1 h-8 w-8 overflow-hidden rounded-full bg-white/75 ring-1 ring-white/75 shadow-glass">
-        <img src="/hermit-crab-mascot.png" alt="Aethel mascot" className="h-full w-full object-cover" />
+      <div className="mr-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-white/75 ring-1 ring-white/75 shadow-glass">
+        <img src="/aethel-logo-icon.png" alt="Aethel logo" className="h-[88%] w-[88%] object-contain" />
       </div>
       {navItems.map(({ to, icon: Icon, label }) => (
         <NavLink

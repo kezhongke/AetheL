@@ -2,11 +2,11 @@
 id: "motoz4p2zh0d9beej"
 title: "情绪传递网络：基于已生成的情绪语义花朵（规则库翻译）和生长阶段（时间/互动沉淀），接收陌生人花朵"
 tag: "产品模块"
-categoryId: "movn2tx1it2qmsmtc"
+categoryId: "mowjrhcr3eb5ii2dt"
 color: "#e11d48"
-interactionWeight: 28
+interactionWeight: 32
 createdAt: "2026-05-06T06:44:15.110Z"
-updatedAt: "2026-05-08T03:38:32.722Z"
+updatedAt: "2026-05-08T06:48:32.397Z"
 extensions: []
 ---
 
@@ -27,13 +27,13 @@ No extensions yet.
     "content": "情绪传递网络：基于已生成的情绪语义花朵（规则库翻译）和生长阶段（时间/互动沉淀），接收陌生人花朵时可选择回应或传递，形成可追溯、可解读的情绪流动可视化网络",
     "tag": "产品模块",
     "color": "#e11d48",
-    "categoryId": "movn2tx1it2qmsmtc",
+    "categoryId": "mowjrhcr3eb5ii2dt",
     "x": -430,
     "y": 86,
-    "interactionWeight": 28,
+    "interactionWeight": 32,
     "createdAt": "2026-05-06T06:44:15.110Z",
-    "updatedAt": "2026-05-08T03:38:32.722Z",
-    "prdUsageCount": 7
+    "updatedAt": "2026-05-08T06:48:32.397Z",
+    "prdUsageCount": 8
   },
   "extensions": []
 }

@@ -1,5 +1,8 @@
-# Aethel: AI Cognitive Workspace for Product Thinking
-# Aethel：面向产品构思的 AI 认知工作区
+# Aethel: AI Cognitive Workspace for Product Thinking｜面向产品构思的 AI 认知工作区
+
+<p align="center">
+  <img src="public/aethel-logo.png" alt="Aethel Logo" width="280" />
+</p>
 
 [English](#english) | [中文](#中文)
 

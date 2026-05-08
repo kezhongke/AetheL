@@ -98,8 +98,8 @@ export default function BubbleInput() {
   return (
     <div className="flex items-center gap-4 px-4 py-4">
       <div className="hidden lg:flex items-center gap-3 w-64 shrink-0">
-        <div className="h-12 w-12 overflow-hidden rounded-full bg-white/70 ring-1 ring-white/70 shadow-glass">
-          <img src="/hermit-crab-mascot.png" alt="Aethel mascot" className="h-full w-full object-cover" />
+        <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white/70 ring-1 ring-white/70 shadow-glass">
+          <img src="/aethel-logo-icon.png" alt="Aethel logo" className="h-[88%] w-[88%] object-contain" />
         </div>
         <div>
           <div className="text-[15px] font-semibold text-on-surface">Aethel</div>

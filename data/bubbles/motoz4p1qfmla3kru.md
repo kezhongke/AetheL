@@ -2,11 +2,11 @@
 id: "motoz4p1qfmla3kru"
 title: "在情绪识别准确的前提下，将不可见的内心状态转化为可观看、可命名、可操作的实体对象，降低情绪处理的"
 tag: "价值主张"
-categoryId: "movn2tx10bc007u0i"
+categoryId: "mowjrhcra5ikqdfsr"
 color: "#7c3aed"
-interactionWeight: 30
+interactionWeight: 34
 createdAt: "2026-05-06T06:44:15.109Z"
-updatedAt: "2026-05-08T03:38:32.722Z"
+updatedAt: "2026-05-08T06:48:32.397Z"
 extensions: []
 ---
 
@@ -27,13 +27,13 @@ No extensions yet.
     "content": "在情绪识别准确的前提下，将不可见的内心状态转化为可观看、可命名、可操作的实体对象，降低情绪处理的心理门槛；若识别置信度低于阈值，则引导用户主动校准而非强制生成，避免「被误解」创伤",
     "tag": "价值主张",
     "color": "#7c3aed",
-    "categoryId": "movn2tx10bc007u0i",
+    "categoryId": "mowjrhcra5ikqdfsr",
     "x": 430,
     "y": -267,
-    "interactionWeight": 30,
+    "interactionWeight": 34,
     "createdAt": "2026-05-06T06:44:15.109Z",
-    "updatedAt": "2026-05-08T03:38:32.722Z",
-    "prdUsageCount": 7
+    "updatedAt": "2026-05-08T06:48:32.397Z",
+    "prdUsageCount": 8
   },
   "extensions": []
 }
