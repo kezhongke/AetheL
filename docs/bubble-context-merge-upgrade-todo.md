@@ -861,3 +861,84 @@ PRD
 ## 最终验收叙事
 
 用户在灵感气泡页面记录想法，随着点击、追问和归类逐渐形成思考现场。任何时刻，用户都可以在当前页面创建认知快照。快照会自动压缩为一句状态、几个语义锚点、一段逻辑脉络和一条唤醒指令。用户回来后，不需要重新阅读所有气泡，只要点击最近快照，即可恢复画布和当时的思维状态；需要更多信息时，再逐级展开到 Level 2 或 Level 3。
+
+## 阶段 11：多 AI 服务商支持
+
+目标：支持多个 AI 服务商（Moonshot / DeepSeek / ModelScope），允许用户在设置页面灵活切换 AI 提供者，并通过统一接口调用不同服务商的 API。
+
+- [x] 新增 `AIProvider` 类型定义，支持 `modelscope` | `deepseek` | `moonshot`。
+- [x] 创建 `src/stores/settingsStore.ts`，使用 Zustand 管理 AI 配置状态。
+- [x] 配置持久化到浏览器 localStorage，用户刷新后配置保持。
+- [x] 每个服务商独立存储 API Key，避免切换时密钥混淆。
+- [x] 切换服务商时自动切换默认模型和 API 地址。
+
+前端配置页面：
+
+- [x] 创建 `src/pages/Settings.tsx` 设置页面。
+- [x] 点击 Logo 可跳转到设置页面 (`/settings`)。
+- [x] 支持选择服务商、输入 API Key、选择/输入模型名称。
+- [x] 提供「应用配置并测试连接」功能，验证配置正确性。
+- [x] 测试连接成功/失败有明确提示。
+
+后端路由设计：
+
+- [x] 新增 `GET /api/ai/config` 接口，获取当前 AI 配置（不暴露 API Key）。
+- [x] 新增 `POST /api/ai/config` 接口，动态更新后端 AI 配置。
+- [x] 后端启动时从环境变量加载配置。
+- [x] 支持运行时切换 AI 提供商，无需重启服务。
+
+API 配置结构：
+
+```typescript
+interface AIConfig {
+  provider: AIProvider
+  baseURL: string
+  apiKey: string
+  model: string
+}
+```
+
+服务商配置映射：
+
+| 服务商 | baseURL | 默认模型 |
+|--------|---------|----------|
+| moonshot | https://api.moonshot.cn/v1 | kimi-k2.6 |
+| deepseek | https://api.deepseek.com | deepseek-v4-pro |
+| modelscope | https://api-inference.modelscope.cn/v1 | moonshotai/Kimi-K2.5 |
+
+环境变量配置：
+
+```env
+MODELSCOPE_API_KEY=xxx
+DEEPSEEK_API_KEY=xxx
+MOONSHOT_API_KEY=xxx
+AI_PROVIDER=moonshot
+```
+
+扩展新服务商步骤：
+
+1. 在 `src/stores/settingsStore.ts` 添加 `AIProvider` 类型和配置。
+2. 在 `api/routes/ai.ts` 的 `getAIConfigFromEnv` 和 `/config` 路由添加对应配置。
+3. 在 `src/pages/Settings.tsx` 添加新的服务商选项。
+4. 更新 `.env.example` 添加新的环境变量。
+
+验收标准：
+
+- [x] 用户可以在设置页面切换 Moonshot / DeepSeek / ModelScope。
+- [x] 每个服务商的 API Key 独立存储，互不影响。
+- [x] 切换服务商后，AI 功能使用新的服务商。
+- [x] 测试连接功能能正确验证 API 配置。
+- [x] 配置保存在浏览器本地，刷新后保持。
+- [x] 后端可根据前端请求动态切换 AI 提供商。
+
+## 阶段 12：前端 Logo 跳转设置
+
+- [x] 修改 `MainNavigation.tsx`，Logo 使用 `Link` 组件包裹。
+- [x] 点击 Logo 跳转到 `/settings` 页面。
+- [x] 设置页面保持与其他页面一致的 UI 风格（liquid glass、warm red）。
+
+验收标准：
+
+- [x] Logo 可点击，hover 有视觉反馈。
+- [x] 点击后正确跳转到设置页面。
+- [x] 设置页面与其他页面风格统一。
