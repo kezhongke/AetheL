@@ -1,6 +1,21 @@
 import { Router, type Request, type Response } from 'express'
 import OpenAI from 'openai'
 import dotenv from 'dotenv'
+import {
+  buildGeneratePrdSystemPrompt,
+  buildGeneratePrdUserPrompt,
+  buildPrdSectionsSystemPrompt,
+  buildPrdSectionsUserPrompt,
+} from '../prompts/prd.js'
+import {
+  buildSnapshotSystemPrompt,
+  buildSnapshotUserPrompt,
+} from '../prompts/snapshot.js'
+import {
+  buildWorkshopSystemPrompt,
+  buildWorkshopUserPrompt,
+  type WorkshopSkillId,
+} from '../prompts/workshop.js'
 
 dotenv.config()
 
@@ -48,6 +63,24 @@ let client = new OpenAI({
   apiKey: aiConfig.apiKey,
 })
 let defaultModel = aiConfig.model
+type CompletionPayload = {
+  model: string
+  messages: Array<{ role: string; content: string }>
+  stream?: boolean
+}
+type CompletionOverride = (payload: CompletionPayload) => Promise<unknown> | unknown
+let completionOverride: CompletionOverride | null = null
+
+export function setAICompletionOverrideForTests(override: CompletionOverride | null) {
+  completionOverride = override
+}
+
+async function createChatCompletion(payload: CompletionPayload): Promise<any> {
+  if (completionOverride) {
+    return completionOverride(payload)
+  }
+  return client.chat.completions.create(payload as Parameters<typeof client.chat.completions.create>[0])
+}
 
 function recreateClient() {
   aiConfig = getAIConfigFromEnv()
@@ -125,7 +158,7 @@ router.post('/chat', async (req: Request, res: Response) => {
       res.setHeader('Cache-Control', 'no-cache')
       res.setHeader('Connection', 'keep-alive')
 
-      const response = await client.chat.completions.create({
+      const response = await createChatCompletion({
         model: defaultModel,
         messages,
         stream: true,
@@ -141,7 +174,7 @@ router.post('/chat', async (req: Request, res: Response) => {
       res.write(`data: ${JSON.stringify({ content: '', done: true })}\n\n`)
       res.end()
     } else {
-      const response = await client.chat.completions.create({
+      const response = await createChatCompletion({
         model: defaultModel,
         messages,
         stream: false,
@@ -200,7 +233,7 @@ ${bubbles.map((b: { id: string; content: string; tag?: string }) => `[${b.id}] $
 
 请对这些气泡进行归类分析。`
 
-    const response = await client.chat.completions.create({
+    const response = await createChatCompletion({
       model: defaultModel,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -247,72 +280,16 @@ router.post('/workshop-skill', async (req: Request, res: Response) => {
     }
 
     const isIdeaSkill = skillId === 'idea-to-bubbles'
-    const skillInstruction = isIdeaSkill
-      ? `当前 skill：一句话生成模块气泡。
-你要真实分析用户的一句话或初步设想，识别其中暗含的用户、触发场景、核心价值、模块雏形、风险假设和验证路径。
-不要使用固定模板填空；每个候选气泡都必须来自这条设想本身的语义、合理推断或用户补充确认。
-第一个候选气泡必须保留用户原始输入，title 使用“初始设想”，content 必须等于用户原始输入。
-从第二个候选气泡开始，只写独立可执行的分析内容或追问方向，不要重复用户原始输入。`
-      : `当前 skill：PRD 文档拆分气泡。
-你要真实阅读用户粘贴的 PRD 草稿或 Markdown 文档，将它拆为可独立追问、可进入画布继续加工的模块气泡。
-不要只按标题机械切分；需要合并重复段落、拆出隐含约束、识别未写清的验收标准和模块依赖。
-如果文档过长，第一个候选气泡可以是“PRD 输入摘要”，content 必须是你对原文的压缩摘要，不要整段复制原文。
-其他候选气泡必须是独立模块、约束、风险或验证项。`
+    const systemPrompt = buildWorkshopSystemPrompt(skillId as WorkshopSkillId)
+    const userPrompt = buildWorkshopUserPrompt({
+      skillId: skillId as WorkshopSkillId,
+      input,
+      confirmationNotes,
+      previousQuestions,
+      previousBubbles,
+    })
 
-    const systemPrompt = `你是 Aethel 创意工坊里的 AI skill 运行器，也是一名资深产品思考搭档。
-你的职责不是给用户套模板，而是把用户输入转换为可确认、可编辑、可落到画布的气泡候选。
-
-工作流：
-1. 先分析输入的真实意图、上下文缺口和产品价值。
-2. 如果有关键不确定项，提出 2-4 个具体澄清问题，帮助用户确认。问题要与输入强相关。
-3. 即使需要澄清，也要先给一版候选气泡，标注哪些来自明确输入，哪些来自合理推断。
-4. 如果用户已经提供补充确认，要吸收这些确认，更新候选气泡，并减少重复澄清问题。
-5. 输出必须支持用户点击确认后直接生成气泡，因此每个候选气泡的 content 要短、明确、可独立追问。
-
-${skillInstruction}
-
-请只返回严格 JSON，不要包含 Markdown 或额外说明：
-{
-  "analysisSummary": "对用户输入的真实分析摘要，120字以内",
-  "needsConfirmation": true,
-  "confidence": 0.78,
-  "confirmationPrompt": "建议用户确认的核心判断，一句话",
-  "clarificationQuestions": [
-    {
-      "id": "q1",
-      "label": "问题标题",
-      "question": "具体问题",
-      "reason": "为什么需要确认",
-      "placeholder": "输入提示"
-    }
-  ],
-  "candidateBubbles": [
-    {
-      "title": "气泡标题",
-      "content": "气泡内容",
-      "tag": "推荐标签",
-      "rationale": "为什么生成这条气泡"
-    }
-  ],
-  "suggestedNextActions": ["确认后生成气泡", "继续补充目标用户"]
-}`
-
-    const userPrompt = [
-      '用户输入：',
-      input.trim(),
-      '',
-      confirmationNotes ? `用户补充确认：\n${confirmationNotes}` : '用户补充确认：暂无',
-      '',
-      Array.isArray(previousQuestions) && previousQuestions.length > 0
-        ? `上一轮澄清问题：\n${previousQuestions.map((item: { question?: string }, index: number) => `${index + 1}. ${item.question || ''}`).join('\n')}`
-        : '上一轮澄清问题：暂无',
-      '',
-      Array.isArray(previousBubbles) && previousBubbles.length > 0
-        ? `上一轮候选气泡：\n${previousBubbles.map((item: { title?: string; content?: string }, index: number) => `${index + 1}. ${item.title || '未命名'}：${item.content || ''}`).join('\n')}`
-        : '上一轮候选气泡：暂无',
-    ].join('\n')
-
-    const response = await client.chat.completions.create({
+    const response = await createChatCompletion({
       model: defaultModel,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -412,24 +389,17 @@ router.post('/generate-prd', async (req: Request, res: Response) => {
       }).join('\n\n')
       : bubbleIds.map((id: string) => `气泡ID: ${id}`).join('\n')
 
-    const systemPrompt = `你是一个专业的产品经理，擅长撰写高质量的PRD文档。
-根据用户提供的灵感气泡内容，生成结构化的PRD文档。
-${template === 'lean' ? '使用精简模板，只包含核心模块。' : template === 'detailed' ? '使用详细模板，包含所有可能的模块。' : '使用标准模板。'}
-${modules ? `需要包含的模块：${modules.join('、')}` : ''}
-
-请按模块逐个输出，每个模块使用以下格式：
-## 模块名称
-模块内容...`
+    const systemPrompt = buildGeneratePrdSystemPrompt(template, modules)
 
     res.setHeader('Content-Type', 'text/event-stream')
     res.setHeader('Cache-Control', 'no-cache')
     res.setHeader('Connection', 'keep-alive')
 
-    const response = await client.chat.completions.create({
+    const response = await createChatCompletion({
       model: defaultModel,
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `请根据以下灵感气泡的详细内容生成PRD，不要只引用气泡ID，要吸收每个气泡的内容、标签和追问补充：\n\n${bubblesContent}` },
+        { role: 'user', content: buildGeneratePrdUserPrompt(bubblesContent) },
       ],
       stream: true,
     })
@@ -486,33 +456,13 @@ router.post('/generate-prd-sections', async (req: Request, res: Response) => {
       ].filter(Boolean).join('\n')
     }).join('\n\n---\n\n')
 
-    const systemPrompt = `你是一个专业的产品经理，正在把产品构思气泡生成可编辑的 PRD 分章节草稿。
-用户已经按标签/分类把气泡分组，每个分组应生成一个独立 PRD section。
+    const systemPrompt = buildPrdSectionsSystemPrompt(template)
 
-要求：
-1. 每个输入分组必须返回一个 section，section.groupId 必须等于输入分组ID。
-2. section.title 可以优化为更像 PRD 章节标题，但必须保留该分组的含义。
-3. section.content 使用 Markdown 正文，不要再输出一级标题；可以包含二级/三级小标题、列表、验收点。
-4. 内容要吸收气泡正文、标签和追问补充，不要只是罗列气泡。
-5. 避免跨分组重复表达，同一类判断在自己的 section 中讲清楚即可。
-6. ${template === 'lean' ? '使用精简模板，章节内容保持短而可执行。' : template === 'detailed' ? '使用详细模板，补足背景、约束、验收标准和风险。' : '使用标准模板，平衡完整性与可读性。'}
-
-请只返回严格 JSON，不要包含 Markdown 代码块或额外说明：
-{
-  "sections": [
-    {
-      "groupId": "输入分组ID",
-      "title": "章节标题",
-      "content": "Markdown 正文"
-    }
-  ]
-}`
-
-    const response = await client.chat.completions.create({
+    const response = await createChatCompletion({
       model: defaultModel,
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `请根据以下分组气泡生成 PRD sections：\n\n${groupLines}` },
+        { role: 'user', content: buildPrdSectionsUserPrompt(groupLines) },
       ],
       stream: false,
     })
@@ -550,34 +500,7 @@ router.post('/snapshot', async (req: Request, res: Response) => {
       return
     }
 
-    const systemPrompt = `你是一个认知负荷优化专家，也是一名认知架构师。你的任务是根据用户选择的知识气泡，构建一个高维度的工作区快照。
-
-任务目标：
-1. 语义聚类：识别气泡间的隐含逻辑，如因果、递进、对比、冲突或互补，而非单纯按时间排序。
-2. 认知压缩：生成长度适中的上下文摘要，作为用户进入工作区的精神索引。
-3. 提取语义锚点：从杂乱气泡中提取 3-5 个核心关键词，作为二级交互入口。
-4. 渐进式披露：Level 1 只给核心结论或概念标签；Level 2 给核心论据、关键参数和关联上下文片段；Level 3 才给原始引用、复杂因果推演和溯源支持。
-5. 快照恢复：生成一段唤醒指令，帮助用户快速回到上次的思维状态。
-
-语言风格：
-使用清晰但有温度的中文，避免机械化的“第一、第二”。可以用“从……出发，我们穿过……，最终汇聚于……”这样的逻辑流叙述，但保持克制。
-
-请只返回严格 JSON，不要包含 Markdown 或额外说明：
-{
-  "statusSnapshot": "一句话定义该工作区的核心议题",
-  "logicFlow": "约200-300字，串联选定气泡的逻辑脉络",
-  "cognitiveGaps": ["尚不明确或需要进一步探索的点"],
-  "semanticAnchors": [
-    {"label": "核心关键词", "reason": "为何成为锚点", "bubbleIds": ["关联气泡ID"]}
-  ],
-  "wakeTrigger": "你上次在这里讨论到关于 [A模块] 的 [B逻辑] 冲突，目前的结论是 [C]，下一步计划是 [D]。",
-  "level2": [
-    {"anchor": "锚点", "summary": "只解释为什么和是什么，不输出三级技术细节", "bubbleIds": ["关联气泡ID"]}
-  ],
-  "level3": [
-    {"bubbleId": "气泡ID", "source": "原始引用或来源", "deepLogic": "深层因果、变更或溯源逻辑"}
-  ]
-}`
+    const systemPrompt = buildSnapshotSystemPrompt()
 
     const bubbleLines = bubbles.map((bubble: {
       id: string
@@ -601,11 +524,11 @@ router.post('/snapshot', async (req: Request, res: Response) => {
       ? categories.map((category: { name: string; description?: string }) => `- ${category.name}${category.description ? `：${category.description}` : ''}`).join('\n')
       : '无'
 
-    const response = await client.chat.completions.create({
+    const response = await createChatCompletion({
       model: defaultModel,
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `当前分类：\n${categoryLines}\n\n用户选择的气泡：\n${bubbleLines}` },
+        { role: 'user', content: buildSnapshotUserPrompt(categoryLines, bubbleLines) },
       ],
       stream: false,
     })
@@ -717,7 +640,7 @@ router.post('/followup', async (req: Request, res: Response) => {
 
 请针对这条灵感提出追问选项。`
 
-    const response = await client.chat.completions.create({
+    const response = await createChatCompletion({
       model: defaultModel,
       messages: [
         { role: 'system', content: systemPrompt },

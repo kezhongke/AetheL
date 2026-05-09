@@ -26,3 +26,13 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# Aethel runtime workspace data
+/data/bubbles/*
+/data/snapshots/*
+/data/.trash/*
+/data/workspace.json
+!/data/bubbles/.gitkeep
+!/data/snapshots/.gitkeep
+!/data/onboarding/
+!/data/onboarding/**

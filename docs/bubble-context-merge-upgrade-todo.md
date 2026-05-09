@@ -21,6 +21,27 @@
 - 可回退：AI 不可用时，仍能用本地 fallback 创建基础快照。
 - 低认知噪音：快照能力应像工具层一样嵌入，不抢占画布主体验。
 
+## 2026-05-09 当前总览
+
+当前已完成的主干能力：
+
+- [x] 灵感气泡主工作区、快照库、创意工坊、PRD 输出中心已经形成完整产品链路。
+- [x] 创意工坊支持一句话设想与文本型 PRD 文件气泡化，并接入真实 AI skill runner。
+- [x] PRD 输出支持按标签 / 分类分束、可编辑 section draft、Markdown / PDF 导出。
+- [x] 快照能力已嵌入工作区，并保留独立快照库作为历史管理入口。
+- [x] 多 AI 服务商配置、设置中心和右上角全局辅助菜单已完成当前 MVP 收敛。
+- [x] Markdown 知识原子持久层已落地，运行数据默认写入本地 `data/`。
+- [x] P0 工程稳定性已完成：mock AI 集成测试、prompt 抽离、运行数据 Git 隔离和 onboarding seed 规划。
+
+当前最优先的后续开发：
+
+1. **P1 输入增强**：PRD 上传支持 PDF / DOCX，增加拖拽上传、内容预览摘要和 `sourceFileName` 来源元信息。
+2. **P1 测试补齐**：补 UI / 组件级集成测试，覆盖工坊文件上传、工坊到 PRD 接力、PRD 导出、选区和气泡条移除。
+3. **P1 prompt / 接口收尾**：继续拆 `categorize` / `followup` prompt，补运行时 schema 校验与过长内容截断。
+4. **P2 PRD Skill / Prompt Pack**：不要开放底层 prompt 全量编辑，而是把不同 PRD 类型做成可装载、可配置、可测试的 skill。
+5. **P2 体验稳定**：PRD section 增加轻量保存状态或最近编辑时间，低性能模式真正作用到 blur / 彩色层 / 动画。
+6. **P3 新能力**：在前面来源元信息与测试基础完成后，再推进联网产品研究 skill。
+
 ## 2026-05-05 当前实现记录
 
 本轮重点从“新增快照能力”转向“统一气泡工作区交互心智”：
@@ -86,7 +107,7 @@
 - [ ] 补齐创意工坊到 PRD 的端到端集成测试，覆盖“生成气泡 -> 自动选中 -> PRD 分束 -> 导出”。
 - [ ] 为 PRD section 编辑区增加轻量保存状态或最近编辑时间，避免用户误解编辑是否进入导出内容。
 - [ ] 继续收敛 PRD 页顶部工具与左侧分组卡片视觉，让它们更接近灵感气泡页的悬浮工具层。
-- [ ] 将 AI skill / PRD / snapshot 的长提示词逐步抽离到 `api/prompts/`，降低路由文件维护成本。
+- [x] 将 AI skill / PRD / snapshot 的长提示词逐步抽离到 `api/prompts/`，降低路由文件维护成本。
 
 ## 2026-05-08 当前实现记录
 
@@ -133,9 +154,10 @@
 - [ ] 为上传文件入口增加拖拽上传区域和文件内容预览摘要。
 - [ ] 将工坊上传文件后的 AI 拆解结果与原文件名建立轻量来源元信息，例如 `sourceFileName`。
 - [ ] 在创意工坊新增「联网产品研究」skill，作为 Aethel 的外部证据层。
-- [ ] 继续抽离 AI prompt 到 `api/prompts/`，优先拆 `workshop` / `prd` / `snapshot` 三类。
-- [ ] 为 AI API fallback、工坊上传、PRD 分束导出补充集成测试。
-- [ ] 评估 `data/workspace.json` 和运行样例数据是否长期纳入 Git，减少演示数据和用户运行数据混杂。
+- [x] 继续抽离 AI prompt 到 `api/prompts/`，优先拆 `workshop` / `prd` / `snapshot` 三类。
+- [x] 为 AI API fallback、AI skill、PRD 分束、snapshot 和文件持久层补充 P0 API 集成测试。
+- [x] 完成 `data/workspace.json` 和运行样例数据的 Git 策略决策：运行态不纳入 Git，引导种子放入 `data/onboarding/`。
+- [ ] 继续补充工坊文件上传与 PRD 导出 UI 级集成测试。
 - [ ] 增加低性能模式：关闭大面积 backdrop blur、彩色窗口层和非关键动画。
 
 ## 2026-05-09 当前规划记录
@@ -177,6 +199,25 @@
 - [x] 优化 `...` 下拉菜单窗口样式，使其透明度、圆角、阴影和菜单项形态更接近顶部胶囊导航。
 - [x] AI 调用失败或保存异常时，在提示中提供“前往设置中心 / AI 引擎”的明确入口。
 - [x] 更新 `docs/MULTI-API-INTEGRATION.md` 中“点击 Logo 进入配置页”的过时描述。
+
+## 2026-05-09 P0 开发记录
+
+本轮重点完成 P0 工程稳定性收敛：
+
+- [x] 新增 `tests/integration/p0.test.ts`，覆盖文件持久层、AI skill、PRD 分束、snapshot 生成和 `apiClient` 本地 fallback。
+- [x] 新增 `npm run test:integration`，使用 mock AI completion 运行，不依赖真实 AI 服务或联网。
+- [x] `npm run check`、`npm run test:integration`、`npm run build` 均已通过；build 仍保留既有大 chunk 警告。
+- [x] 支持通过 `AETHEL_DATA_DIR` 覆盖运行数据目录，集成测试写入临时目录，不污染本地 `data/`。
+- [x] 将 `workshop` / `prd` / `snapshot` 长提示词抽离到 `api/prompts/`，路由文件只保留校验、调用和结果归一化。
+- [x] 将 `data/bubbles/*`、`data/snapshots/*`、`data/.trash/*`、`data/workspace.json` 作为本地运行态加入 Git 忽略，并从版本跟踪中移除。
+- [x] 新增 `data/onboarding/README.md`，为后续首次使用引导数据预留版本化种子目录，避免示例数据与用户运行数据混杂。
+
+本轮未完成且顺延的测试边界：
+
+- [ ] 工坊文件上传的浏览器级测试：Markdown / TXT 自动填充输入框、不支持文件类型错误提示。
+- [ ] 工坊到 PRD 的 UI 级接力测试：生成气泡 -> 自动选中 -> 进入 PRD -> 导出。
+- [ ] 画布交互测试：选区、气泡条移除、快照预选集合。
+- [ ] PRD 导出文件内容测试：用户编辑 section 后导出的 Markdown / PDF 使用最新内容。
 
 ## 阶段 0：现状收敛
 
@@ -432,6 +473,102 @@ interface PrdSectionDraft {
 - [x] 少量未标签气泡会进入“未归类补充”章节，而不是丢失。
 - [x] 颜色标识轻量但可追溯，整体视觉不脱离灵感气泡页面。
 
+## 阶段 3.7.5：PRD Skill / Prompt Pack 扩展规划
+
+目标：支持不同类型的 PRD / 设计文档生成，但不把底层 system prompt 全量暴露给普通用户编辑。Aethel 应以可装载的 `PRD Skill / Prompt Pack` 作为扩展单位，让用户选择、安装或配置不同文档能力包。
+
+产品判断：
+
+- [x] 不建议直接开放底层 prompt 全量编辑。
+- [x] 底层 prompt 和 API 返回 schema 强绑定，普通用户直接修改容易破坏 JSON 输出、字段约束、fallback 逻辑和前端渲染。
+- [x] 不同 PRD 类型真正需要变化的是生成目标、章节结构、关注维度、验收标准和输出格式，而不是完整 system prompt。
+- [x] 后续如果增加联网研究、来源引用、风险提示和高风险领域复核，裸 prompt 编辑会更难治理。
+- [x] 更合理的产品形态是固定系统 prompt 内核，开放结构化 Skill Pack 配置。
+
+建议内置 PRD skill 类型：
+
+- [ ] `通用产品 PRD`
+- [ ] `前端交互 PRD`
+- [ ] `设计实现说明 DESIGN.md`
+- [ ] `后端接口 PRD`
+- [ ] `增长实验 PRD`
+- [ ] `AI 功能 PRD`
+- [ ] `合规 / 风控 PRD`
+
+分层模型：
+
+```text
+稳定内核
+- JSON 输出格式
+- 安全约束
+- 字段 schema
+- fallback 要求
+- Aethel 气泡 / PRD / snapshot 数据协议
+
+Skill Pack
+- PRD 类型
+- 章节结构
+- 生成视角
+- 关注维度
+- 示例片段
+- 输出风格
+- 适用输入类型
+```
+
+前端 PRD -> DESIGN.md skill 草案：
+
+```ts
+{
+  id: 'frontend-design-md',
+  name: '前端 DESIGN.md',
+  inputTypes: ['bubbles', 'prd-section', 'markdown'],
+  outputType: 'markdown-document',
+  sections: [
+    '页面目标',
+    '信息架构',
+    '组件结构',
+    '状态与数据流',
+    '交互细节',
+    '响应式规则',
+    '视觉约束',
+    '边界状态',
+    '验收标准'
+  ],
+  focus: [
+    '前端工程可实现性',
+    '组件拆分',
+    '交互状态',
+    '设计一致性',
+    '移动端适配'
+  ]
+}
+```
+
+用户侧交互建议：
+
+- [ ] 用户选择 PRD / 文档类型，而不是直接编辑底层 prompt。
+- [ ] 用户可以调整章节模板、勾选关注维度、添加项目约束。
+- [ ] 用户可以保存为自定义 skill，但自定义内容必须是结构化字段。
+- [ ] 高级模式可开放 prompt override，但必须提供预览、测试、schema 校验和恢复默认。
+
+实现路线：
+
+- [ ] 先完成 `categorize` / `followup` prompt 抽离，并补 AI JSON schema 校验。
+- [ ] 为 PRD 生成增加 `prdSkillId` 或 `documentTemplateId`。
+- [ ] 新增 `api/prompts/skills/` 或 `api/skills/`，承载内置 PRD skill 定义。
+- [ ] 将 PRD sections prompt 改为由稳定内核 + Skill Pack 结构化配置组合生成。
+- [ ] 在 PRD 页增加文档类型选择入口，默认使用 `通用产品 PRD`。
+- [ ] 第一批优先实现 `frontend-design-md`，验证“产品气泡 -> 前端 DESIGN.md”的价值。
+- [ ] 后续开放自定义 Skill Pack 安装 / 导入，但不允许绕过 schema 直接破坏输出协议。
+
+验收标准：
+
+- [ ] 用户可以在 PRD 输出中心选择不同文档 skill，并看到不同章节骨架。
+- [ ] `frontend-design-md` 能从气泡或 PRD section 生成可交给前端实现的 DESIGN.md。
+- [ ] Skill Pack 修改不会破坏 PRD section JSON 输出 schema。
+- [ ] 自定义 skill 有预览与测试，不通过 schema 校验时不能保存启用。
+- [ ] 底层 prompt 内核保持可维护，普通用户默认不需要接触 system prompt。
+
 ## 阶段 3.8：联网产品研究 Skill / 外部证据层
 
 目标：为 Aethel 增加受控的联网研究能力，但不把产品做成通用搜索页。联网结果必须被转译为产品判断结构，并回流到气泡、PRD section 或快照上下文中。
@@ -550,18 +687,17 @@ score =
 
 ## 阶段 5：AI 提示词与接口整理
 
-- [ ] 将快照提示词从路由文件中抽离。
-- [ ] 新增 prompt 模块：
+- [x] 将快照提示词从路由文件中抽离。
+- [x] 新增 prompt 模块：
 
 ```text
 api/prompts/
 ├─ snapshot.ts
 ├─ prd.ts
-├─ categorize.ts
-└─ followup.ts
+└─ workshop.ts
 ```
 
-- [ ] 快照接口继续使用 `POST /api/ai/snapshot`。
+- [x] 快照接口继续使用 `POST /api/ai/snapshot`。
 - [ ] 输入结构标准化：
 
 ```ts
@@ -602,12 +738,12 @@ interface SnapshotCognition {
 }
 ```
 
-- [ ] 对 AI JSON 结果做运行时校验和容错。
+- [ ] 对 AI JSON 结果做运行时 schema 校验和更细容错。
 - [ ] 对过长气泡内容做截断或分批压缩。
 
 验收标准：
 
-- [ ] 路由文件不再堆大量 prompt 文本。
+- [ ] 路由文件不再堆大量 prompt 文本。（已先抽离 workshop / prd / snapshot；categorize / followup 后续继续拆）
 - [ ] AI 返回不规范 JSON 时有 fallback。
 - [ ] 快照生成 prompt 能读取内容、标签、补充、关系、权重。
 
@@ -662,6 +798,8 @@ data/
 ├─ snapshots/
 │  ├─ snapshot_001.md
 │  └─ snapshot_002.md
+├─ onboarding/
+│  └─ README.md
 └─ workspace.json
 ```
 
@@ -670,6 +808,7 @@ data/
 - `data/bubbles/*.md`：每个气泡一个文档，保存内容、标签、分类、追问补充、语义关系和低频元数据。
 - `data/workspace.json`：保存高频画布状态，如坐标、缩放、当前筛选、当前选中、面板状态。
 - `data/snapshots/*.md`：保存快照摘要、语义锚点、唤醒指令，并引用一组 bubble IDs。
+- `data/onboarding/`：仅保存版本化首次使用引导种子，不混入真实用户运行数据。
 
 气泡 Markdown schema 草案：
 
@@ -798,12 +937,15 @@ Git 友好策略：
 
 - [x] Markdown 文档保持稳定字段顺序，减少 diff 噪音。
 - [x] 高频坐标不写入 bubble md，避免每次拖拽都产生文档 diff。
-- [ ] `workspace.json` 可选择纳入 Git，也可加入 `.gitignore`，根据产品定位决定。
+- [x] `workspace.json` 可选择纳入 Git，也可加入 `.gitignore`，根据产品定位决定。
+- [x] 当前决策：本地运行态 `data/bubbles/*`、`data/snapshots/*`、`data/.trash/*`、`data/workspace.json` 不再纳入 Git。
+- [x] 当前决策：首次使用引导数据只放入 `data/onboarding/`，后续通过显式导入 / 复制进入运行态。
+- [x] 支持 `AETHEL_DATA_DIR` 覆盖数据目录，便于测试和隔离运行环境。
 - [ ] 为导入/导出预留 `Export Markdown Vault` 能力。
 
 安全与路径约束：
 
-- [x] 所有文件写入限制在项目内 `data/` 目录。
+- [x] 默认文件写入限制在项目内 `data/` 目录；测试或隔离部署可通过 `AETHEL_DATA_DIR` 指向独立数据目录。
 - [x] 后端 API 禁止接收任意文件路径。
 - [x] 删除气泡时先移动到 `data/.trash/`，二次确认后再物理删除。
 - [x] Markdown 正文允许用户内容，但 frontmatter 字段必须经过结构化序列化。
@@ -871,23 +1013,27 @@ PRD
 - [ ] 高频气泡在快照摘要或 Level 3 中优先出现。
 - [ ] 恢复快照后，画布气泡、分类和 viewport 正确恢复。
 - [ ] 删除快照不影响当前工作区。
-- [ ] AI 接口失败时 fallback 生效。
+- [x] `apiClient` 同源失败 / HTML / 404 / 5xx 时本地 API fallback 生效。
+- [ ] AI 接口业务失败时，快照 / 工坊 / PRD 的用户可见 fallback 与重试入口生效。
 - [ ] PRD 文档拆分 skill 上传 Markdown / TXT 文件后，能自动填入输入框并运行 AI。
 - [ ] 上传不支持的二进制文件时，能展示清晰错误提示。
 - [ ] 全局 AI 动效只在 AI 运行时出现，不遮挡关键交互。
-- [ ] 刷新页面后持久化数据可恢复。
+- [x] API 级文件持久层可写入临时数据目录并恢复 workspace 结构。
+- [ ] 浏览器刷新后端到端持久化数据可恢复。
+- [x] `npm run test:integration` 通过。
 - [x] `npm run check` 通过。
 - [x] `npm run build` 通过。
 
 ## 建议实施顺序
 
-1. 先完成工作区内快照入口，不动导航。
-2. 抽出快照组件，复用到 `/context` 页面。
-3. 加入持久化，保护用户数据。
-4. 引入 Markdown 知识原子持久层，让气泡成为可版本化文档。
-5. 抽离 AI prompt 文件，降低后端维护成本。
-6. 升级多维权重机制。
-7. 最后再调整导航命名和模块定位。
+1. 先补 P1 输入增强：PDF / DOCX 解析、拖拽上传、文件预览摘要、`sourceFileName`。
+2. 补 UI / 浏览器级测试：工坊上传、工坊到 PRD 接力、PRD 导出、选区 / 气泡条 / 快照预选集合。
+3. 继续抽离 `categorize` / `followup` prompt，并为 AI JSON 返回增加运行时 schema 校验。
+4. 增加 PRD Skill / Prompt Pack 能力，优先实现 `frontend-design-md`。
+5. 增加 PRD section 保存状态或最近编辑时间。
+6. 让低性能模式真正关闭大面积 blur、彩色层和非关键动画。
+7. 升级多维权重机制与“高频线索 / 核心气泡”展示。
+8. 在来源元信息和测试稳定后，再开发联网产品研究 skill。
 
 ## 风险与取舍
 
@@ -915,7 +1061,7 @@ PRD
 前端配置页面：
 
 - [x] 创建 `src/pages/Settings.tsx` 设置页面。
-- [x] 点击 Logo 可跳转到设置页面 (`/settings`)。
+- [x] 设置入口从 Logo 调整为右上角 `...` 全局辅助菜单，Logo 回到灵感气泡主工作区。
 - [x] 支持选择服务商、输入 API Key、选择/输入模型名称。
 - [x] 提供「应用配置并测试连接」功能，验证配置正确性。
 - [x] 测试连接成功/失败有明确提示。
@@ -971,14 +1117,14 @@ AI_PROVIDER=moonshot
 - [x] 配置保存在浏览器本地，刷新后保持。
 - [x] 后端可根据前端请求动态切换 AI 提供商。
 
-## 阶段 12：前端 Logo 跳转设置
+## 阶段 12：前端 Logo 与设置入口收敛
 
 - [x] 修改 `MainNavigation.tsx`，Logo 使用 `Link` 组件包裹。
-- [x] 点击 Logo 跳转到 `/settings` 页面。
+- [x] 点击 Logo 回到灵感气泡主工作区 `/`，设置入口由右上角 `...` 全局辅助菜单承载。
 - [x] 设置页面保持与其他页面一致的 UI 风格（liquid glass、warm red）。
 
 验收标准：
 
 - [x] Logo 可点击，hover 有视觉反馈。
-- [x] 点击后正确跳转到设置页面。
+- [x] 点击后正确回到灵感气泡主工作区。
 - [x] 设置页面与其他页面风格统一。
