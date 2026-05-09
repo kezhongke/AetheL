@@ -12,11 +12,9 @@ import {
   FileJson,
   FileText,
   Gauge,
-  HelpCircle,
   Info,
   Key,
   Loader2,
-  MessageSquare,
   Palette,
   Save,
   ServerCog,
@@ -45,7 +43,7 @@ interface BackendConfig {
   hasApiKey: boolean
 }
 
-type SettingsSectionKey = 'ai' | 'storage' | 'appearance' | 'activity' | 'help' | 'feedback' | 'about'
+type SettingsSectionKey = 'ai' | 'storage' | 'appearance' | 'activity' | 'about'
 
 interface StatusMessage {
   type: 'success' | 'error' | 'info'
@@ -91,8 +89,6 @@ const settingsSections: Array<{
   { id: 'storage', label: '数据与存储', description: 'Markdown 原子与工作区文件', icon: Database },
   { id: 'appearance', label: '外观与性能', description: '动效、色彩和低性能偏好', icon: Palette },
   { id: 'activity', label: '活动记录', description: '保存、测试和运行状态', icon: Activity },
-  { id: 'help', label: '帮助', description: '本地预览与常见排障', icon: HelpCircle },
-  { id: 'feedback', label: '反馈', description: '提交问题和补充上下文', icon: MessageSquare },
   { id: 'about', label: '关于', description: '版本、许可证与仓库信息', icon: Info },
 ]
 
@@ -199,7 +195,6 @@ export default function Settings() {
   const sectionParam = searchParams.get('section') as SettingsSectionKey | null
   const activeSection = settingsSections.some((section) => section.id === sectionParam) ? sectionParam! : 'ai'
   const activeSectionMeta = settingsSections.find((section) => section.id === activeSection) || settingsSections[0]
-  const runtimeOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173'
 
   const activeProvider = providers.find((provider) => provider.id === aiProvider) || providers[0]
   const currentApiKey = aiProvider === 'deepseek'
@@ -748,96 +743,6 @@ export default function Settings() {
     </section>
   )
 
-  const renderHelp = () => (
-    <div className="grid gap-4 xl:grid-cols-2">
-      <section className="surface-list-card rounded-[24px] p-4">
-        <div className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-on-surface">
-          <HelpCircle size={15} className="text-primary" />
-          常见排障
-        </div>
-        <div className="space-y-3 text-[12px] leading-5 text-on-surface-variant">
-          <p><span className="font-semibold text-on-surface">AI 不响应：</span>确认 API 服务在 `3000` 端口运行，并检查 AI 引擎分区里的密钥和模型。</p>
-          <p><span className="font-semibold text-on-surface">文件不同步：</span>查看活动记录里的文件层状态；前端缓存仍会暂存当前改动。</p>
-          <p><span className="font-semibold text-on-surface">上传 PRD 失败：</span>当前支持 Markdown、TXT、HTML、JSON、CSV 文本文件，单文件不超过 2MB。</p>
-          <p><span className="font-semibold text-on-surface">导出异常：</span>先确认 PRD section 内容不为空，再重新导出 Markdown 或 PDF。</p>
-        </div>
-      </section>
-
-      <section className="surface-list-card rounded-[24px] p-4">
-        <div className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-on-surface">
-          <ServerCog size={15} className="text-secondary" />
-          本地运行入口
-        </div>
-        <div className="space-y-2 text-[12px]">
-          <div className="rounded-[16px] bg-white/34 px-3 py-2 ring-1 ring-white/45">
-            <div className="text-outline">前端预览</div>
-            <div className="font-mono text-on-surface">{runtimeOrigin}</div>
-          </div>
-          <div className="rounded-[16px] bg-white/34 px-3 py-2 ring-1 ring-white/45">
-            <div className="text-outline">本地 API fallback</div>
-            <div className="font-mono text-on-surface">http://localhost:3000</div>
-          </div>
-        </div>
-        <button type="button" onClick={() => setSection('ai')} className="btn-glass mt-4 flex h-10 items-center gap-2 !px-4 text-[12px]">
-          <ServerCog size={14} />
-          前往 AI 引擎
-        </button>
-      </section>
-    </div>
-  )
-
-  const renderFeedback = () => (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
-      <section className="surface-list-card rounded-[24px] p-4">
-        <div className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-on-surface">
-          <MessageSquare size={15} className="text-primary" />
-          反馈入口
-        </div>
-        <p className="mb-4 text-[12px] leading-5 text-on-surface-variant">
-          反馈时建议附带当前页面、触发动作、AI 服务商、是否能复现，以及活动记录里的最近状态。
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <a
-            href="https://github.com/SuTang-vain/AetheL/issues/new"
-            target="_blank"
-            rel="noreferrer"
-            className="btn-liquid flex h-10 items-center gap-2 !px-4 text-[12px]"
-          >
-            <ExternalLink size={14} />
-            提交 GitHub Issue
-          </a>
-          <a
-            href="https://github.com/SuTang-vain/AetheL"
-            target="_blank"
-            rel="noreferrer"
-            className="btn-glass flex h-10 items-center gap-2 !px-4 text-[12px]"
-          >
-            <ExternalLink size={14} />
-            打开仓库
-          </a>
-        </div>
-      </section>
-
-      <section className="surface-list-card rounded-[24px] p-4">
-        <div className="mb-3 text-[13px] font-semibold text-on-surface">建议附带信息</div>
-        <div className="space-y-2 text-[12px]">
-          <div className="flex justify-between rounded-[16px] bg-white/34 px-3 py-2 ring-1 ring-white/45">
-            <span className="text-outline">AI 服务商</span>
-            <span className="font-semibold text-on-surface">{providerLabel(aiProvider)}</span>
-          </div>
-          <div className="flex justify-between rounded-[16px] bg-white/34 px-3 py-2 ring-1 ring-white/45">
-            <span className="text-outline">模型</span>
-            <span className="max-w-[150px] truncate font-semibold text-on-surface" title={currentModel}>{currentModel}</span>
-          </div>
-          <div className="flex justify-between rounded-[16px] bg-white/34 px-3 py-2 ring-1 ring-white/45">
-            <span className="text-outline">文件层</span>
-            <span className="font-semibold text-on-surface">{persistence.status}</span>
-          </div>
-        </div>
-      </section>
-    </div>
-  )
-
   const renderAbout = () => (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
       <section className="surface-list-card rounded-[24px] p-4">
@@ -884,8 +789,6 @@ export default function Settings() {
     if (activeSection === 'storage') return renderStorage()
     if (activeSection === 'appearance') return renderAppearance()
     if (activeSection === 'activity') return renderActivity()
-    if (activeSection === 'help') return renderHelp()
-    if (activeSection === 'feedback') return renderFeedback()
     if (activeSection === 'about') return renderAbout()
     return renderAiEngine()
   }
@@ -901,7 +804,7 @@ export default function Settings() {
               </div>
               <div>
                 <h1 className="text-[18px] font-semibold text-on-surface">设置中心</h1>
-                <p className="text-[12px] text-outline">AI 引擎、数据层、外观性能和辅助入口</p>
+                <p className="text-[12px] text-outline">AI 引擎、数据层、外观性能和系统信息</p>
               </div>
             </div>
 

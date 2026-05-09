@@ -5,7 +5,9 @@ import {
   AlertCircle,
   Archive,
   CheckCircle2,
+  ExternalLink,
   FileText,
+  Globe2,
   HelpCircle,
   Loader2,
   MessageSquare,
@@ -40,11 +42,14 @@ export default function MainNavigation() {
           ? `已保存 ${new Date(lastSavedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`
           : '已连接文件层'
   const currentSettingsSection = new URLSearchParams(location.search).get('section') || 'ai'
-  const menuItems = [
+  const internalMenuItems = [
     { to: '/settings?section=activity', icon: Activity, label: '活动记录', section: 'activity' },
-    { to: '/settings?section=help', icon: HelpCircle, label: '帮助', section: 'help' },
-    { to: '/settings?section=feedback', icon: MessageSquare, label: '反馈', section: 'feedback' },
     { to: '/settings?section=ai', icon: Settings2, label: '设置', section: 'ai' },
+  ]
+  const supportMenuItems = [
+    { href: 'https://kezhongke.cn/', icon: HelpCircle, label: '帮助' },
+    { href: 'https://kezhongke.cn/', icon: MessageSquare, label: '反馈' },
+    { href: 'https://kezhongke.cn/', icon: Globe2, label: '论坛' },
   ]
 
   useEffect(() => {
@@ -117,9 +122,9 @@ export default function MainNavigation() {
 
         {menuOpen && (
           <div className="absolute left-1/2 top-full z-[60] mt-3 w-[232px] -translate-x-1/2">
-            <div className="glass-panel floating-window rounded-[24px] p-3">
+            <div className="support-menu-panel rounded-[26px] p-2">
               <div
-                className="mb-2 flex items-start gap-2 rounded-[18px] bg-white/45 px-3 py-2 ring-1 ring-white/60"
+                className="mb-1.5 flex items-start gap-2 rounded-[20px] bg-white/72 px-3 py-2 ring-1 ring-white/70"
                 title={statusLabel}
               >
                 <span
@@ -128,7 +133,7 @@ export default function MainNavigation() {
                       ? 'bg-error-container/40 text-error'
                       : isBusy
                         ? 'bg-primary-fixed/35 text-primary'
-                        : 'bg-secondary-container/45 text-secondary'
+                        : 'bg-secondary-container/55 text-secondary'
                   }`}
                 >
                   <StatusIcon size={14} className={isBusy ? 'animate-spin' : ''} />
@@ -140,17 +145,17 @@ export default function MainNavigation() {
               </div>
 
               <div className="space-y-1">
-                {menuItems.map(({ to, icon: Icon, label, section }) => {
+                {internalMenuItems.map(({ to, icon: Icon, label, section }) => {
                   const active = location.pathname === '/settings' && currentSettingsSection === section
                   return (
                     <Link
                       key={to}
                       to={to}
                       onClick={() => setMenuOpen(false)}
-                      className={`flex h-9 items-center gap-2 rounded-[18px] px-3 text-[12px] font-semibold transition-all ${
+                      className={`flex h-9 items-center gap-2 rounded-full px-3 text-[12px] font-semibold transition-all ${
                         active
                           ? 'bg-primary text-on-primary shadow-glow-primary'
-                          : 'text-on-surface hover:bg-primary-fixed/35 hover:text-primary'
+                          : 'text-on-surface hover:bg-primary-fixed/30 hover:text-primary'
                       }`}
                     >
                       <Icon size={14} />
@@ -158,6 +163,25 @@ export default function MainNavigation() {
                     </Link>
                   )
                 })}
+              </div>
+
+              <div className="my-1.5 h-px bg-on-surface/8" />
+
+              <div className="space-y-1">
+                {supportMenuItems.map(({ href, icon: Icon, label }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex h-9 items-center gap-2 rounded-full px-3 text-[12px] font-semibold text-on-surface transition-all hover:bg-primary-fixed/30 hover:text-primary"
+                  >
+                    <Icon size={14} />
+                    <span className="min-w-0 flex-1">{label}</span>
+                    <ExternalLink size={12} className="text-outline" />
+                  </a>
+                ))}
               </div>
             </div>
           </div>
