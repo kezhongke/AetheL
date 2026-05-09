@@ -1,5 +1,19 @@
-import { Link, NavLink } from 'react-router-dom'
-import { AlertCircle, Archive, CheckCircle2, FileText, Loader2, Puzzle, Sparkles } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Link, NavLink, useLocation } from 'react-router-dom'
+import {
+  Activity,
+  AlertCircle,
+  Archive,
+  CheckCircle2,
+  FileText,
+  HelpCircle,
+  Loader2,
+  MessageSquare,
+  MoreHorizontal,
+  Puzzle,
+  Settings2,
+  Sparkles,
+} from 'lucide-react'
 import { usePersistenceStore } from '@/stores/persistenceStore'
 
 const navItems = [
@@ -10,6 +24,9 @@ const navItems = [
 ]
 
 export default function MainNavigation() {
+  const location = useLocation()
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
   const { status, error, lastSavedAt } = usePersistenceStore()
   const isBusy = status === 'loading' || status === 'saving'
   const StatusIcon = status === 'error' ? AlertCircle : isBusy ? Loader2 : CheckCircle2
@@ -22,10 +39,37 @@ export default function MainNavigation() {
         : lastSavedAt
           ? `已保存 ${new Date(lastSavedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`
           : '已连接文件层'
+  const currentSettingsSection = new URLSearchParams(location.search).get('section') || 'ai'
+  const menuItems = [
+    { to: '/settings?section=activity', icon: Activity, label: '活动记录', section: 'activity' },
+    { to: '/settings?section=help', icon: HelpCircle, label: '帮助', section: 'help' },
+    { to: '/settings?section=feedback', icon: MessageSquare, label: '反馈', section: 'feedback' },
+    { to: '/settings?section=ai', icon: Settings2, label: '设置', section: 'ai' },
+  ]
+
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false)
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [])
 
   return (
     <nav className="fixed left-6 top-5 z-50 floating-window rounded-full p-1 flex items-center gap-0.5">
-      <Link to="/settings" className="mr-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-white/75 ring-1 ring-white/75 shadow-glass hover:opacity-80 transition-opacity cursor-pointer">
+      <Link to="/" className="mr-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-white/75 ring-1 ring-white/75 shadow-glass hover:opacity-80 transition-opacity cursor-pointer" title="回到灵感气泡">
         <img src="/aethel-logo-icon.png" alt="Aethel logo" className="h-[88%] w-[88%] object-contain" />
       </Link>
       {navItems.map(({ to, icon: Icon, label }) => (
@@ -45,18 +89,80 @@ export default function MainNavigation() {
         </NavLink>
       ))}
       <span className="mx-1 h-4 w-px bg-white/45" />
-      <span
-        className={`flex h-8 w-8 items-center justify-center rounded-full ${
-          status === 'error'
-            ? 'text-error bg-error-container/30'
-            : isBusy
-              ? 'text-primary bg-primary-fixed/30'
-              : 'text-primary bg-white/24'
-        }`}
-        title={statusLabel}
-      >
-        <StatusIcon size={14} className={isBusy ? 'animate-spin' : ''} />
-      </span>
+
+      <div ref={menuRef} className="relative">
+        <button
+          type="button"
+          onClick={() => setMenuOpen((open) => !open)}
+          className={`relative flex h-8 w-8 items-center justify-center rounded-full transition-all ${
+            menuOpen || location.pathname === '/settings'
+              ? 'bg-primary text-on-primary shadow-glow-primary'
+              : 'text-on-surface hover:bg-primary-fixed/35 hover:text-primary'
+          }`}
+          aria-label="更多"
+          aria-expanded={menuOpen}
+          title="更多"
+        >
+          <MoreHorizontal size={15} />
+          <span
+            className={`absolute right-1 top-1 h-1.5 w-1.5 rounded-full ring-1 ring-white/70 ${
+              status === 'error'
+                ? 'bg-error'
+                : isBusy
+                  ? 'bg-primary'
+                  : 'bg-secondary'
+            }`}
+          />
+        </button>
+
+        {menuOpen && (
+          <div className="absolute left-1/2 top-full z-[60] mt-3 w-[232px] -translate-x-1/2">
+            <div className="glass-panel floating-window rounded-[24px] p-3">
+              <div
+                className="mb-2 flex items-start gap-2 rounded-[18px] bg-white/45 px-3 py-2 ring-1 ring-white/60"
+                title={statusLabel}
+              >
+                <span
+                  className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
+                    status === 'error'
+                      ? 'bg-error-container/40 text-error'
+                      : isBusy
+                        ? 'bg-primary-fixed/35 text-primary'
+                        : 'bg-secondary-container/45 text-secondary'
+                  }`}
+                >
+                  <StatusIcon size={14} className={isBusy ? 'animate-spin' : ''} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[12px] font-semibold text-on-surface">状态</span>
+                  <span className="block truncate text-[11px] text-outline">{statusLabel}</span>
+                </span>
+              </div>
+
+              <div className="space-y-1">
+                {menuItems.map(({ to, icon: Icon, label, section }) => {
+                  const active = location.pathname === '/settings' && currentSettingsSection === section
+                  return (
+                    <Link
+                      key={to}
+                      to={to}
+                      onClick={() => setMenuOpen(false)}
+                      className={`flex h-9 items-center gap-2 rounded-[18px] px-3 text-[12px] font-semibold transition-all ${
+                        active
+                          ? 'bg-primary text-on-primary shadow-glow-primary'
+                          : 'text-on-surface hover:bg-primary-fixed/35 hover:text-primary'
+                      }`}
+                    >
+                      <Icon size={14} />
+                      <span>{label}</span>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </nav>
   )
 }

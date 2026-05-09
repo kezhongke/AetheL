@@ -9,11 +9,21 @@ interface SettingsState {
   deepSeekApiKey: string
   moonshotApiKey: string
   currentModel: string
+  lastSavedAt: string | null
+  lastTestedAt: string | null
+  lowPerformanceMode: boolean
+  reduceMotion: boolean
+  reduceColorLayer: boolean
   setAiProvider: (provider: AIProvider) => void
   setModelScopeApiKey: (key: string) => void
   setDeepSeekApiKey: (key: string) => void
   setMoonshotApiKey: (key: string) => void
   setCurrentModel: (model: string) => void
+  markSaved: () => void
+  markTested: () => void
+  setLowPerformanceMode: (enabled: boolean) => void
+  setReduceMotion: (enabled: boolean) => void
+  setReduceColorLayer: (enabled: boolean) => void
 }
 
 const defaultModels: Record<AIProvider, string> = {
@@ -33,11 +43,16 @@ export { defaultBaseUrls }
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      aiProvider: 'deepseek',
+      aiProvider: 'moonshot',
       modelScopeApiKey: '',
       deepSeekApiKey: '',
       moonshotApiKey: '',
-      currentModel: 'deepseek-v4-pro',
+      currentModel: 'kimi-k2.6',
+      lastSavedAt: null,
+      lastTestedAt: null,
+      lowPerformanceMode: false,
+      reduceMotion: false,
+      reduceColorLayer: false,
 
       setAiProvider: (provider) =>
         set({
@@ -49,6 +64,11 @@ export const useSettingsStore = create<SettingsState>()(
       setDeepSeekApiKey: (key) => set({ deepSeekApiKey: key }),
       setMoonshotApiKey: (key) => set({ moonshotApiKey: key }),
       setCurrentModel: (model) => set({ currentModel: model }),
+      markSaved: () => set({ lastSavedAt: new Date().toISOString() }),
+      markTested: () => set({ lastTestedAt: new Date().toISOString() }),
+      setLowPerformanceMode: (enabled) => set({ lowPerformanceMode: enabled }),
+      setReduceMotion: (enabled) => set({ reduceMotion: enabled }),
+      setReduceColorLayer: (enabled) => set({ reduceColorLayer: enabled }),
     }),
     {
       name: 'aethel-settings',
