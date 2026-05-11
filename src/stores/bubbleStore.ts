@@ -13,6 +13,7 @@ export interface Bubble {
   sourceSkillId?: string
   sourceGroupId?: string
   sourceLabel?: string
+  sourceFileName?: string
   prdUsageCount?: number
   createdAt: string
   updatedAt: string
@@ -177,7 +178,7 @@ interface BubbleState {
     tag?: string,
     x?: number,
     y?: number,
-    metadata?: Pick<Bubble, 'sourceSkillId' | 'sourceGroupId' | 'sourceLabel'>,
+    metadata?: Pick<Bubble, 'sourceSkillId' | 'sourceGroupId' | 'sourceLabel' | 'sourceFileName'>,
   ) => string
   updateBubble: (id: string, updates: Partial<Bubble>) => void
   deleteBubble: (id: string) => void

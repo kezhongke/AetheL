@@ -313,7 +313,7 @@ export default function PrdOutput() {
 
       <div className="relative z-10 h-full p-6">
         <div className="absolute left-6 top-20 bottom-6 w-[340px] z-10">
-          <section className="floating-window liquid-vessel h-full rounded-[32px] flex flex-col overflow-hidden">
+          <section className="floating-window liquid-vessel h-full rounded-[32px] flex flex-col overflow-hidden" data-testid="prd-bubble-selector">
             <div className="px-5 py-4 border-b border-white/35">
               <div className="flex items-center justify-between">
                 <span className="text-[15px] text-on-surface font-semibold">选择气泡</span>
@@ -438,6 +438,7 @@ export default function PrdOutput() {
                 onClick={handleGenerate}
                 disabled={isGenerating || selectedBubbleIds.size === 0}
                 className="w-full btn-liquid text-[13px] flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                data-testid="generate-prd"
               >
                 {isGenerating ? (
                   <>
@@ -477,6 +478,7 @@ export default function PrdOutput() {
                 onClick={handleExportMarkdown}
                 disabled={!combinedContent}
                 className="btn-glass text-[13px] flex items-center gap-1 disabled:opacity-40"
+                data-testid="export-markdown"
               >
                 <Download size={12} />
                 Markdown
@@ -486,6 +488,7 @@ export default function PrdOutput() {
                 onClick={handleExportPDF}
                 disabled={!combinedContent}
                 className="btn-glass text-[13px] flex items-center gap-1 disabled:opacity-40"
+                data-testid="export-pdf"
               >
                 <Download size={12} />
                 PDF
@@ -515,6 +518,7 @@ export default function PrdOutput() {
                           value={section.title}
                           onChange={(event) => updateSectionDraft(section.id, { title: event.target.value })}
                           className="prd-section-title-input min-w-0 flex-1 px-3 py-1.5 text-[15px] font-semibold"
+                          data-testid="prd-section-title"
                         />
                         <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ backgroundColor: `${section.color}18`, color: section.color }}>
                           {section.tag}
@@ -541,6 +545,7 @@ export default function PrdOutput() {
                           value={section.content}
                           onChange={(event) => updateSectionDraft(section.id, { content: event.target.value })}
                           className="prd-section-editor min-h-[220px] w-full resize-y px-5 py-4 text-[13px] leading-7"
+                          data-testid="prd-section-editor"
                         />
                       </div>
                     </section>

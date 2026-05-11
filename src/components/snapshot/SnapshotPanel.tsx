@@ -195,6 +195,7 @@ export default function SnapshotPanel({ onClose, embedded = false, contained = f
                       ? 'bg-primary-container/20 text-primary'
                       : 'hover:bg-surface-container/60 text-on-surface-variant'
                   }`}
+                  data-testid={includedBubbleIds.has(bubble.id) ? 'snapshot-bubble-included' : 'snapshot-bubble-excluded'}
                 >
                   <div className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${
                     includedBubbleIds.has(bubble.id) ? 'border-primary bg-primary/15' : 'border-outline-variant'

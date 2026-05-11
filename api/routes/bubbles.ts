@@ -46,6 +46,10 @@ router.post('/', async (req: Request, res: Response) => {
       x: Number(req.body?.x || 0),
       y: Number(req.body?.y || 0),
       interactionWeight: Number(req.body?.interactionWeight || 0),
+      sourceSkillId: req.body?.sourceSkillId ? String(req.body.sourceSkillId).trim() : undefined,
+      sourceGroupId: req.body?.sourceGroupId ? String(req.body.sourceGroupId).trim() : undefined,
+      sourceLabel: req.body?.sourceLabel ? String(req.body.sourceLabel).trim() : undefined,
+      sourceFileName: req.body?.sourceFileName ? String(req.body.sourceFileName).trim() : undefined,
       createdAt: req.body?.createdAt || now,
       updatedAt: req.body?.updatedAt || now,
     }

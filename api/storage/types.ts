@@ -7,6 +7,10 @@ export interface StoredBubble {
   x: number
   y: number
   interactionWeight?: number
+  sourceSkillId?: string
+  sourceGroupId?: string
+  sourceLabel?: string
+  sourceFileName?: string
   createdAt: string
   updatedAt: string
 }

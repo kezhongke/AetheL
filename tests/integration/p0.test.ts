@@ -77,6 +77,51 @@ async function main() {
       }
     }
 
+    if (systemPrompt.includes('碎片化的灵感进行归类整理')) {
+      return {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              categories: [{
+                name: '核心体验',
+                description: '围绕主链路体验',
+                bubbleIds: ['b1', 'b2'],
+                suggestedTag: '核心',
+                confidence: 1.8,
+              }],
+              suggestedTags: [{ name: '核心', color: '#ad2c0d', reason: '归类结果' }],
+              relations: [
+                { sourceId: 'b1', targetId: 'b2', type: 'duplicate', reason: '表达接近' },
+                { sourceId: 'b1', targetId: '', type: 'unknown', reason: '应被过滤' },
+              ],
+            }),
+          },
+        }],
+      }
+    }
+
+    if (systemPrompt.includes('正在帮助用户处理多个灵感气泡之间的关系')) {
+      return {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              question: '两条气泡存在重复，可以合并成一个更明确的目标。',
+              options: [{
+                id: 'merge',
+                text: '确认合并',
+                detail: '保留 b1，吸收 b2 的验收标准。',
+                action: 'merge',
+                targetBubbleId: 'b1',
+                sourceBubbleIds: ['b2'],
+                deleteBubbleIds: ['b2'],
+                newContent: '为年轻产品经理提供结构化 PRD 生成体验，并明确验收标准。',
+              }],
+            }),
+          },
+        }],
+      }
+    }
+
     if (systemPrompt.includes('PRD 分章节草稿')) {
       return {
         choices: [{
@@ -179,6 +224,41 @@ async function main() {
     assert.equal(payload.statusSnapshot, '围绕核心用户假设形成初步判断。')
     assert.equal(payload.semanticAnchors[0].label, '用户假设')
     assert.equal(Array.isArray(payload.level3), true)
+  })
+
+  test('categorize response is normalized through runtime schema checks', async () => {
+    const longContent = `${'很长的气泡内容'.repeat(700)}`
+    const { response, payload } = await request(baseUrl, 'POST', '/api/ai/categorize', {
+      bubbles: [
+        { id: 'b1', content: longContent, tag: '用户假设' },
+        { id: 'b2', content: '结构化 PRD 输出', tag: 'PRD' },
+      ],
+      existingTags: ['用户假设'],
+    })
+
+    assert.equal(response.status, 200)
+    assert.equal(payload.success, true)
+    assert.equal(payload.categories[0].confidence, 1)
+    assert.equal(payload.relations.length, 1)
+    assert.equal(payload.relations[0].type, 'duplicate')
+    const categorizeCall = aiCalls.find((call) => call.messages[0]?.content.includes('碎片化的灵感进行归类整理'))
+    assert.ok(categorizeCall)
+    assert.ok(categorizeCall.messages[1].content.includes('[已截断]'))
+  })
+
+  test('relationship followup response is normalized through runtime schema checks', async () => {
+    const { response, payload } = await request(baseUrl, 'POST', '/api/ai/followup', {
+      bubbleContent: 'b1 与 b2 是否重复？',
+      existingBubbles: ['b1: 结构化 PRD 生成', 'b2: PRD 输出验收标准'],
+      mode: 'relationship',
+      targetBubbleIds: ['b1', 'b2'],
+    })
+
+    assert.equal(response.status, 200)
+    assert.equal(payload.success, true)
+    assert.equal(payload.options[0].action, 'merge')
+    assert.deepEqual(payload.options[0].deleteBubbleIds, ['b2'])
+    assert.equal(payload.options.at(-1).text, '就这样吧')
   })
 
   test('apiFetch falls back to the local API when same-origin returns HTML', async () => {

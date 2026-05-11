@@ -35,12 +35,17 @@
 
 当前最优先的后续开发：
 
-1. **P1 输入增强**：PRD 上传支持 PDF / DOCX，增加拖拽上传、内容预览摘要和 `sourceFileName` 来源元信息。
-2. **P1 测试补齐**：补 UI / 组件级集成测试，覆盖工坊文件上传、工坊到 PRD 接力、PRD 导出、选区和气泡条移除。
-3. **P1 prompt / 接口收尾**：继续拆 `categorize` / `followup` prompt，补运行时 schema 校验与过长内容截断。
-4. **P2 PRD Skill / Prompt Pack**：不要开放底层 prompt 全量编辑，而是把不同 PRD 类型做成可装载、可配置、可测试的 skill。
-5. **P2 体验稳定**：PRD section 增加轻量保存状态或最近编辑时间，低性能模式真正作用到 blur / 彩色层 / 动画。
-6. **P3 新能力**：在前面来源元信息与测试基础完成后，再推进联网产品研究 skill。
+1. **P2 PRD Skill / Prompt Pack**：不要开放底层 prompt 全量编辑，而是把不同 PRD 类型做成可装载、可配置、可测试的 skill。
+2. **P2 体验稳定**：PRD section 增加轻量保存状态或最近编辑时间，低性能模式真正作用到 blur / 彩色层 / 动画。
+3. **P2 输入体验继续打磨**：基于已支持的 PDF / DOCX / 文本上传，补首次使用引导、解析失败诊断和来源筛选。
+4. **P2 测试扩展**：在现有 UI 测试基础上补浏览器刷新后端到端持久化恢复、PDF 导出内容 smoke test。
+5. **P3 新能力**：在来源元信息与测试基础完成后，再推进联网产品研究 skill。
+
+已完成的 P1 主线：
+
+- [x] PRD 上传支持 PDF / DOCX / Markdown / TXT / HTML / JSON / CSV，并增加拖拽上传、内容预览摘要和 `sourceFileName` 来源元信息。
+- [x] 补浏览器级测试，覆盖工坊上传、工坊到 PRD 接力、PRD Markdown 导出、选区气泡条和快照预选集合。
+- [x] 抽离 `categorize` / `followup` prompt，补运行时 schema 校验、fallback 和过长内容截断。
 
 ## 2026-05-05 当前实现记录
 
@@ -150,14 +155,14 @@
 
 下一步建议：
 
-- [ ] 为 PRD 文档上传增加 PDF / DOCX 解析能力，优先采用按需动态导入，避免主包继续变重。
-- [ ] 为上传文件入口增加拖拽上传区域和文件内容预览摘要。
-- [ ] 将工坊上传文件后的 AI 拆解结果与原文件名建立轻量来源元信息，例如 `sourceFileName`。
+- [x] 为 PRD 文档上传增加 PDF / DOCX 解析能力，采用按需动态导入，避免首屏主包直接承载解析库。
+- [x] 为上传文件入口增加拖拽上传区域和文件内容预览摘要。
+- [x] 将工坊上传文件后的 AI 拆解结果与原文件名建立轻量来源元信息：`sourceFileName`。
 - [ ] 在创意工坊新增「联网产品研究」skill，作为 Aethel 的外部证据层。
 - [x] 继续抽离 AI prompt 到 `api/prompts/`，优先拆 `workshop` / `prd` / `snapshot` 三类。
 - [x] 为 AI API fallback、AI skill、PRD 分束、snapshot 和文件持久层补充 P0 API 集成测试。
 - [x] 完成 `data/workspace.json` 和运行样例数据的 Git 策略决策：运行态不纳入 Git，引导种子放入 `data/onboarding/`。
-- [ ] 继续补充工坊文件上传与 PRD 导出 UI 级集成测试。
+- [x] 继续补充工坊文件上传与 PRD 导出 UI 级集成测试。
 - [ ] 增加低性能模式：关闭大面积 backdrop blur、彩色窗口层和非关键动画。
 
 ## 2026-05-09 当前规划记录
@@ -214,10 +219,26 @@
 
 本轮未完成且顺延的测试边界：
 
-- [ ] 工坊文件上传的浏览器级测试：Markdown / TXT 自动填充输入框、不支持文件类型错误提示。
-- [ ] 工坊到 PRD 的 UI 级接力测试：生成气泡 -> 自动选中 -> 进入 PRD -> 导出。
-- [ ] 画布交互测试：选区、气泡条移除、快照预选集合。
-- [ ] PRD 导出文件内容测试：用户编辑 section 后导出的 Markdown / PDF 使用最新内容。
+- [x] 工坊文件上传的浏览器级测试：Markdown 自动填充输入框、不支持文件类型错误提示。
+- [x] 工坊到 PRD 的 UI 级接力测试：生成气泡 -> 自动选中 -> 进入 PRD -> 导出 Markdown。
+- [x] 画布交互测试：选区、气泡条移除、快照预选集合。
+- [x] PRD 导出文件内容测试：用户编辑 section 后导出的 Markdown 使用最新内容。
+- [ ] PRD PDF 导出内容测试：当前保留为后续 smoke test，避免在浏览器测试中引入过重的 PDF 解析链。
+
+## 2026-05-11 P1 开发记录
+
+本轮重点完成“输入与测试闭环”：
+
+- [x] 新增 `src/lib/prdFileParser.ts`，统一处理 PRD 上传文件识别、Markdown / TXT / HTML / JSON / CSV 归一化、PDF 文本抽取、DOCX 文本抽取、预览摘要和大小限制。
+- [x] 创意工坊 PRD 拆解支持拖拽上传、PDF / DOCX 文件、文件预览摘要、上传错误提示和上传来源清除。
+- [x] 工坊生成气泡时写入 `sourceFileName`，并将 `sourceSkillId` / `sourceGroupId` / `sourceLabel` / `sourceFileName` 扩展到前端 store、后端 `StoredBubble`、Markdown payload 与 bubble API。
+- [x] 新增 `api/prompts/categorize.ts`、`api/prompts/followup.ts`，路由文件不再内联这两段长 prompt。
+- [x] 新增 `api/aiResponseSchemas.ts`，对 `categorize` / `followup` 的 AI JSON 返回做运行时归一化：过滤无效关系、限制 confidence、补 `就这样吧` fallback、处理异常结构。
+- [x] `categorize` / `followup` user prompt 对过长内容进行截断，避免单个气泡或上下文过长拖垮接口。
+- [x] 新增 `tests/integration/p1-file-parser.test.ts`，覆盖 Markdown、DOCX、PDF 和不支持文件类型。
+- [x] 新增 `tests/integration/p1-ui.test.ts`，使用本机 Chrome + Vite dev server 覆盖真实页面交互：工坊上传、错误提示、工坊到 PRD、Markdown 导出、选区气泡条、快照预选集合。
+- [x] `package.json` 新增 `npm run test:ui`，`npm run test:integration` 扩展为 P0 API + P1 文件解析。
+- [x] `npm run check`、`npm run test:integration`、`npm run test:ui`、`npm run build` 均已通过；build 仍保留既有大 chunk 警告，新增 PDF worker chunk 属于按需解析能力的预期产物。
 
 ## 阶段 0：现状收敛
 
@@ -343,7 +364,7 @@ src/components/snapshot/
 - [x] 工坊页面支持“AI 分析 -> 用户补充确认 -> AI 吸收确认 -> 生成气泡”的交互流程。
 - [x] 「一句话生成模块气泡」仅第一个气泡保留用户原始输入，其余气泡写入 AI 分析后的独立内容。
 - [x] 「PRD 文档拆分气泡」支持文本文件上传后自动填充输入框，并保留用户二次编辑能力。
-- [ ] 「PRD 文档拆分气泡」后续支持 PDF / DOCX 文件解析。
+- [x] 「PRD 文档拆分气泡」支持 PDF / DOCX 文件解析、拖拽上传和文件预览摘要。
 - [ ] 后续支持从本地 skill 包或插件清单安装扩展。
 
 ## 阶段 3.6：创意工坊与 PRD 输出的有机接力
@@ -553,7 +574,7 @@ Skill Pack
 
 实现路线：
 
-- [ ] 先完成 `categorize` / `followup` prompt 抽离，并补 AI JSON schema 校验。
+- [x] 先完成 `categorize` / `followup` prompt 抽离，并补 AI JSON schema 校验。
 - [ ] 为 PRD 生成增加 `prdSkillId` 或 `documentTemplateId`。
 - [ ] 新增 `api/prompts/skills/` 或 `api/skills/`，承载内置 PRD skill 定义。
 - [ ] 将 PRD sections prompt 改为由稳定内核 + Skill Pack 结构化配置组合生成。
@@ -738,13 +759,13 @@ interface SnapshotCognition {
 }
 ```
 
-- [ ] 对 AI JSON 结果做运行时 schema 校验和更细容错。
-- [ ] 对过长气泡内容做截断或分批压缩。
+- [x] 对 `categorize` / `followup` AI JSON 结果做运行时 schema 校验和更细容错。
+- [x] 对 `categorize` / `followup` 过长气泡内容做截断。
 
 验收标准：
 
-- [ ] 路由文件不再堆大量 prompt 文本。（已先抽离 workshop / prd / snapshot；categorize / followup 后续继续拆）
-- [ ] AI 返回不规范 JSON 时有 fallback。
+- [x] 路由文件不再堆大量 prompt 文本。（已抽离 workshop / prd / snapshot / categorize / followup）
+- [x] `categorize` / `followup` AI 返回不规范 JSON 时有 fallback。
 - [ ] 快照生成 prompt 能读取内容、标签、补充、关系、权重。
 
 ## 阶段 6：状态管理与数据持久化
@@ -1015,23 +1036,24 @@ PRD
 - [ ] 删除快照不影响当前工作区。
 - [x] `apiClient` 同源失败 / HTML / 404 / 5xx 时本地 API fallback 生效。
 - [ ] AI 接口业务失败时，快照 / 工坊 / PRD 的用户可见 fallback 与重试入口生效。
-- [ ] PRD 文档拆分 skill 上传 Markdown / TXT 文件后，能自动填入输入框并运行 AI。
-- [ ] 上传不支持的二进制文件时，能展示清晰错误提示。
+- [x] PRD 文档拆分 skill 上传 Markdown / TXT 文件后，能自动填入输入框并运行 AI。
+- [x] 上传不支持的二进制文件时，能展示清晰错误提示。
 - [ ] 全局 AI 动效只在 AI 运行时出现，不遮挡关键交互。
 - [x] API 级文件持久层可写入临时数据目录并恢复 workspace 结构。
 - [ ] 浏览器刷新后端到端持久化数据可恢复。
 - [x] `npm run test:integration` 通过。
+- [x] `npm run test:ui` 通过。
 - [x] `npm run check` 通过。
 - [x] `npm run build` 通过。
 
 ## 建议实施顺序
 
-1. 先补 P1 输入增强：PDF / DOCX 解析、拖拽上传、文件预览摘要、`sourceFileName`。
-2. 补 UI / 浏览器级测试：工坊上传、工坊到 PRD 接力、PRD 导出、选区 / 气泡条 / 快照预选集合。
-3. 继续抽离 `categorize` / `followup` prompt，并为 AI JSON 返回增加运行时 schema 校验。
-4. 增加 PRD Skill / Prompt Pack 能力，优先实现 `frontend-design-md`。
-5. 增加 PRD section 保存状态或最近编辑时间。
-6. 让低性能模式真正关闭大面积 blur、彩色层和非关键动画。
+1. 增加 PRD Skill / Prompt Pack 能力，优先实现 `frontend-design-md`。
+2. 为 PRD 生成增加 `prdSkillId` 或 `documentTemplateId`，让 PRD sections prompt 由稳定内核 + Skill Pack 结构化配置组合生成。
+3. 增加 PRD section 保存状态或最近编辑时间。
+4. 让低性能模式真正关闭大面积 blur、彩色层和非关键动画。
+5. 补浏览器刷新后端到端持久化恢复、PDF 导出内容 smoke test。
+6. 基于 `sourceFileName` 增加来源筛选 / 来源说明，完善首次使用引导数据。
 7. 升级多维权重机制与“高频线索 / 核心气泡”展示。
 8. 在来源元信息和测试稳定后，再开发联网产品研究 skill。
 

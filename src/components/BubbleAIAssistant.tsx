@@ -221,6 +221,7 @@ export default function BubbleAIAssistant({
                             }}
                             className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-on-surface-variant/65 transition-all hover:bg-white/70 hover:text-primary"
                             title="移出选区"
+                            data-testid="selected-bubble-chip-remove"
                           >
                             <X size={10} />
                           </button>
@@ -243,6 +244,7 @@ export default function BubbleAIAssistant({
                   }}
                   className="flex h-7 w-7 items-center justify-center rounded-full text-outline hover:bg-surface-container/70 hover:text-on-surface"
                   title={hasSelectedBubbles ? '清空全部选中气泡' : '关闭气泡 AI 输入'}
+                  data-testid={hasSelectedBubbles ? 'clear-selected-bubbles' : 'close-bubble-ai'}
                 >
                   <X size={14} />
                 </button>
