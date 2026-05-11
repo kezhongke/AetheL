@@ -5,6 +5,17 @@ import {
   type SnapshotCognition,
 } from '@/stores/snapshotStore'
 
+// ─────────────────────────────────────────────
+// 本地缓存：避免重复请求相同气泡组合的 snapshot
+// ─────────────────────────────────────────────
+const LOCAL_CACHE_TTL_MS = 10 * 60 * 1000 // 10 分钟
+
+export function getSnapshotCacheKey(bubbles: Bubble[]): string {
+  // 按 ID 排序后拼接，保证顺序无关性
+  const ids = bubbles.map(b => b.id).sort().join(',')
+  return `snapshot:${ids}`
+}
+
 export function normalizeCognition(data: Partial<SnapshotCognition>, fallback: SnapshotCognition): SnapshotCognition {
   return {
     statusSnapshot: data.statusSnapshot || fallback.statusSnapshot,
@@ -44,6 +55,22 @@ export async function requestSnapshotCognition(
 ): Promise<SnapshotCognition> {
   const fallback = createFallbackCognition(bubbles)
 
+  // 1. 检查本地缓存
+  try {
+    const cacheKey = getSnapshotCacheKey(bubbles)
+    const cached = localStorage.getItem(cacheKey)
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached)
+      if (Date.now() - timestamp < LOCAL_CACHE_TTL_MS) {
+        console.log('[Snapshot Cache] HIT from localStorage')
+        return normalizeCognition(data, fallback)
+      }
+    }
+  } catch {
+    // localStorage 不可用或解析失败，继续请求
+  }
+
+  // 2. 请求后端（现在会命中后端缓存）
   try {
     const response = await apiFetch('/api/ai/snapshot', {
       method: 'POST',
@@ -56,6 +83,15 @@ export async function requestSnapshotCognition(
 
     if (!response.ok) return fallback
     const data = await response.json()
+
+    // 3. 写入本地缓存
+    try {
+      const cacheKey = getSnapshotCacheKey(bubbles)
+      localStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: Date.now() }))
+    } catch {
+      // localStorage 写失败不影响主流程
+    }
+
     return normalizeCognition(data, fallback)
   } catch {
     return fallback

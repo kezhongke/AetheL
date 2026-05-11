@@ -44,14 +44,14 @@ Rough idea / PRD draft / external notes
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Zustand, Framer Motion.
 - **Visualization**: HTML5 Canvas API (for the high-performance bubble workspace).
 - **Backend**: Express (as a secure proxy for AI services and local workspace file APIs).
-- **AI Engine**: ModelScope API (Kimi-K2.5), OpenMemory MCP for context memory.
+- **AI 引擎**：DeepSeek-v4-pro（推荐）、ModelScope API (Kimi-K2.5)，按需切换
 - **Persistence**: Markdown knowledge atoms under `data/bubbles`, semantic snapshots under `data/snapshots`, and runtime layout state in `data/workspace.json`.
 
 ### 📦 Getting Started
 
 #### Prerequisites
 - Node.js (v18+)
-- ModelScope API Key
+- DeepSeek API Key（recommended）or ModelScope API Key
 
 #### Installation
 1. Clone the repository:
@@ -137,7 +137,7 @@ data/
 - **前端**：React 18, TypeScript, Vite, Tailwind CSS, Zustand, Framer Motion。
 - **可视化**：HTML5 Canvas API（用于高性能气泡交互画布）。
 - **后端**：Express（作为 AI 服务代理层，并提供本地工作区文件 API）。
-- **AI 引擎**：ModelScope API (Kimi-K2.5), OpenMemory MCP (用于上下文记忆)。
+- **AI 引擎**：DeepSeek-v4-pro（推荐）、ModelScope API (Kimi-K2.5)，按需切换
 - **持久化**：`data/bubbles` 保存气泡知识原子，`data/snapshots` 保存语义快照，`data/workspace.json` 保存布局和运行态。
 
 ### 📦 快速上手
@@ -159,7 +159,9 @@ data/
 3. 配置环境变量：
    在根目录创建 `.env` 文件：
    ```env
-   MODELSCOPE_API_KEY=您的API密钥
+   DEEPSEEK_API_KEY=您的DeepSeek API密钥
+   MODELSCOPE_API_KEY=您的ModelScope API密钥（可选）
+   AI_PROVIDER=deepseek  # 或 moonshot / modelscope
    PORT=3000
    ```
 

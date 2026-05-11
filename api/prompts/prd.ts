@@ -40,3 +40,33 @@ export function buildPrdSectionsSystemPrompt(template: string) {
 export function buildPrdSectionsUserPrompt(groupLines: string) {
   return `请根据以下分组气泡生成 PRD sections：\n\n${groupLines}`
 }
+
+/**
+ * 单分组 PRD section 生成 prompt（用于并行模式）
+ */
+export function buildPrdSectionUserPrompt(
+  group: {
+    id: string
+    title: string
+    tag?: string
+    bubbles?: Array<{ id: string; content: string; tag?: string; extensions?: string[] }>
+  },
+  template: string,
+): string {
+  const bubbles = Array.isArray(group.bubbles) ? group.bubbles : []
+  const bubbleLines = bubbles.map((bubble, idx) => {
+    const lines = [`气泡 ${idx + 1}`, `ID: ${bubble.id}`, `内容: ${bubble.content}`]
+    if (bubble.tag) lines.push(`标签: ${bubble.tag}`)
+    if (bubble.extensions?.length) lines.push(`追问补充: ${bubble.extensions.join('；')}`)
+    return lines.join('\n')
+  }).join('\n\n')
+
+  return [
+    `分组信息：`,
+    `分组ID: ${group.id}`,
+    `章节标题: ${group.title}`,
+    group.tag ? `标签: ${group.tag}` : '',
+    '气泡：',
+    bubbleLines,
+  ].filter(Boolean).join('\n')
+}

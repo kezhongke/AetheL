@@ -32,3 +32,64 @@ export function buildSnapshotSystemPrompt() {
 export function buildSnapshotUserPrompt(categoryLines: string, bubbleLines: string) {
   return `当前分类：\n${categoryLines}\n\n用户选择的气泡：\n${bubbleLines}`
 }
+
+/**
+ * 并行模式：将气泡分组并行分析
+ */
+export interface BubbleAnalysisResult {
+  semanticAnchors: Array<{ label: string; reason: string; bubbleIds: string[] }>
+  level2: Array<{ anchor: string; summary: string; bubbleIds: string[] }>
+  level3: Array<{ bubbleId: string; source: string; deepLogic: string }>
+}
+
+export function buildBubbleAnalysisPrompt(bubbleLines: string): string {
+  return `你是一个认知负荷优化专家，正在分析用户选择的知识气泡。
+
+你的任务是从这些气泡中提取：
+1. 语义锚点（1-3 个核心关键词 + 关联气泡 ID）
+2. Level 2 摘要（锚点 + 摘要 + 关联气泡 ID）
+3. Level 3 原始引用（气泡 ID + 来源 + 深层逻辑）
+
+请只返回严格 JSON，不要包含 Markdown 或额外说明：
+{
+  "semanticAnchors": [
+    {"label": "核心关键词", "reason": "为何成为锚点", "bubbleIds": ["关联气泡ID"]}
+  ],
+  "level2": [
+    {"anchor": "锚点", "summary": "为什么和是什么", "bubbleIds": ["关联气泡ID"]}
+  ],
+  "level3": [
+    {"bubbleId": "气泡ID", "source": "原始引用或来源", "deepLogic": "深层因果或变更逻辑"}
+  ]
+}`
+}
+
+export function buildSnapshotAssemblyPrompt(
+  categoryLines: string,
+  bubbleAnalyses: BubbleAnalysisResult[]
+): string {
+  const analysisJson = JSON.stringify(bubbleAnalyses, null, 2)
+  return `当前分类：
+${categoryLines}
+
+气泡分析结果：
+${analysisJson}
+
+请基于以上分析，构建完整的工作区快照。要求：
+1. statusSnapshot：一句话定义核心议题
+2. logicFlow：约200-300字串联逻辑脉络
+3. cognitiveGaps：列出认知缺口
+4. wakeTrigger：生成唤醒指令
+5. 整合 semanticAnchors、level2、level3
+
+请只返回严格 JSON：
+{
+  "statusSnapshot": "...",
+  "logicFlow": "...",
+  "cognitiveGaps": ["..."],
+  "semanticAnchors": [...],
+  "wakeTrigger": "...",
+  "level2": [...],
+  "level3": [...]
+}`
+}
